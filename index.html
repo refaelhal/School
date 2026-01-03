@@ -84,7 +84,6 @@
             letter-spacing: 0.05em;
             color: #94a3b8;
             border-radius: 4px;
-            cursor: pointer;
             position: relative;
             display: flex;
             align-items: center;
@@ -92,14 +91,23 @@
             transition: all 0.2s ease;
         }
         .dark .btn-minimal-trigger { border-color: #262626; color: #737373; }
-        .btn-minimal-trigger:hover { border-color: #cbd5e1; color: #64748b; }
-        .dark .btn-minimal-trigger:hover { border-color: #404040; color: #a3a3a3; }
         
         .btn-chevron {
             position: absolute;
             right: 4px;
             top: 50%;
             transform: translateY(-50%);
+        }
+
+        /* The trick to trigger native iOS dropdown on first click */
+        .native-trigger-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -188,13 +196,9 @@
                 return dateArray;
             }, [assignments, now]);
 
-            // Unified trigger for the Island pop-up
-            const handleOpenIsland = (type, existingTask = null, dateOverride = null) => {
+            const handleOpenIsland = (type, existingTask = null) => {
                 setIslandType(type);
-                if (type === 'view_objectives') {
-                    // Custom state for viewing objectives for a date
-                    setModalData({ title: 'Viewing Objectives', date: dateOverride, linkedGoalId: '' });
-                } else if (existingTask) {
+                if (existingTask) {
                     setLinkingContext({ date: existingTask.date, taskId: existingTask.id });
                     setModalData({ title: existingTask.text, date: existingTask.date, linkedGoalId: existingTask.linkedGoalId || '' });
                 } else {
@@ -206,10 +210,6 @@
 
             const handleIslandSubmit = (e) => {
                 e.preventDefault();
-                if (islandType === 'view_objectives') {
-                    setIslandVisible(false);
-                    return;
-                }
                 if (islandType === 'link_existing') {
                     linkTaskToGoal(linkingContext.date, linkingContext.taskId, modalData.linkedGoalId ? Number(modalData.linkedGoalId) : null);
                     setIslandVisible(false);
@@ -307,43 +307,30 @@
             return (
                 <div className="max-w-xl mx-auto px-6 pt-10 pb-32 w-full relative min-h-screen">
                     
-                    {/* The Main Island Pop-up (Now used for everything) */}
+                    {/* Island Pop-up */}
                     <div className="fixed top-0 left-0 right-0 z-[200] flex justify-center pt-4 px-6 pointer-events-none">
                         <div className={`island-popup w-full max-w-md bg-black dark:bg-[#1a1a1a] shadow-2xl rounded-[32px] p-6 pointer-events-auto ${islandVisible ? 'active' : ''}`}>
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-white text-[10px] font-black uppercase tracking-[0.2em]">
-                                    {islandType === 'goal' ? 'Add Objective' : (islandType === 'link_existing' ? 'Link Task' : (islandType === 'view_objectives' ? 'Date Objectives' : 'Add Task'))}
+                                    {islandType === 'goal' ? 'Add Objective' : (islandType === 'link_existing' ? 'Link Task' : 'Add Task')}
                                 </h3>
                                 <button onClick={() => setIslandVisible(false)} className="text-white/30 hover:text-white p-1">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                 </button>
                             </div>
                             <form onSubmit={handleIslandSubmit} className="space-y-6">
-                                {islandType !== 'view_objectives' && (
-                                    <input 
-                                        disabled={islandType === 'link_existing'}
-                                        autoFocus 
-                                        value={modalData.title} 
-                                        onChange={e => setModalData({...modalData, title: e.target.value})} 
-                                        placeholder="Title..." 
-                                        className={`w-full bg-transparent border-b border-white/10 py-2 outline-none text-white text-lg placeholder:text-white/20 focus:border-white/40 transition-colors ${islandType === 'link_existing' ? 'opacity-50' : ''}`} 
-                                    />
-                                )}
-                                
+                                <input 
+                                    disabled={islandType === 'link_existing'}
+                                    autoFocus 
+                                    value={modalData.title} 
+                                    onChange={e => setModalData({...modalData, title: e.target.value})} 
+                                    placeholder="Title..." 
+                                    className={`w-full bg-transparent border-b border-white/10 py-2 outline-none text-white text-lg placeholder:text-white/20 focus:border-white/40 transition-colors ${islandType === 'link_existing' ? 'opacity-50' : ''}`} 
+                                />
                                 {islandType === 'goal' ? (
                                     <div className="space-y-1 w-full">
                                         <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Deadline Date</label>
                                         <input type="date" value={modalData.date} onChange={e => setModalData({...modalData, date: e.target.value})} className="island-input" />
-                                    </div>
-                                ) : islandType === 'view_objectives' ? (
-                                    <div className="space-y-1 w-full">
-                                        <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Objectives for {formatDate(modalData.date)}</label>
-                                        <select className="island-input cursor-default" defaultValue="">
-                                            <option value="" disabled className="text-black">Active items:</option>
-                                            {assignments.filter(a => a.deadline === modalData.date).map(a => (
-                                                <option key={a.id} value={a.id} className="text-black">{a.title}</option>
-                                            ))}
-                                        </select>
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-2 gap-6">
@@ -365,7 +352,7 @@
                                     </div>
                                 )}
                                 <button type="submit" className="w-full bg-white text-black py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] active:scale-95 transition-transform">
-                                    {islandType === 'view_objectives' ? 'Close' : (islandType === 'link_existing' ? 'Update Link' : 'Save Entry')}
+                                    {islandType === 'link_existing' ? 'Update Link' : 'Save Entry'}
                                 </button>
                             </form>
                         </div>
@@ -480,13 +467,18 @@
                                                     
                                                     {dateAssigns.length > 0 && (
                                                         <div className="relative inline-block" onClick={e => e.stopPropagation()}>
-                                                            <button 
-                                                                onClick={() => handleOpenIsland('view_objectives', null, date)}
-                                                                className="btn-minimal-trigger"
-                                                            >
+                                                            <div className="btn-minimal-trigger">
                                                                 {dateAssigns.length} {dateAssigns.length === 1 ? 'Objective' : 'Objectives'}
                                                                 <svg className="btn-chevron" width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                                                            </button>
+                                                                
+                                                                {/* Native iOS Dropdown Trigger overlay */}
+                                                                <select className="native-trigger-overlay">
+                                                                    <option disabled selected>{dateAssigns.length} Objectives</option>
+                                                                    {dateAssigns.map(a => (
+                                                                        <option key={a.id}>{a.title}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </div>
