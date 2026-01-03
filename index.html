@@ -72,14 +72,15 @@
         .nav-blur { backdrop-filter: blur(12px); background-color: rgba(255, 255, 255, 0.75); }
         .dark .nav-blur { background-color: rgba(20, 20, 20, 0.75); border-color: rgba(255, 255, 255, 0.1); }
         
-        /* Native-style objective dropdown icon */
-        .obj-select {
+        /* Minimal Objective Selector Styling */
+        .minimal-select {
             appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='4' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
             background-repeat: no-repeat;
-            background-position: right 0.4rem center;
-            background-size: 0.8em;
-            padding-right: 1.5rem;
+            background-position: right 0.5rem center;
+            background-size: 0.6em;
+            padding-right: 1.4rem;
+            transition: all 0.2s ease;
         }
     </style>
 </head>
@@ -385,7 +386,7 @@
                                                         <svg className={`flex-shrink-0 text-slate-300 dark:text-darkMuted transition-transform duration-300 ${isExpanded ? 'rotate-90 text-black dark:text-white' : ''}`} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"></polyline></svg>
                                                         <div className="flex flex-col min-w-0">
                                                             <div className="flex items-center gap-2 min-w-0">
-                                                                <span className={`text-sm font-semibold truncate max-w-[200px] ${isExpanded ? 'text-black dark:text-white' : 'text-slate-900 dark:text-darkText'}`}>{a.title}</span>
+                                                                <span className={`text-sm font-semibold truncate max-w-[160px] ${isExpanded ? 'text-black dark:text-white' : 'text-slate-900 dark:text-darkText'}`}>{a.title}</span>
                                                                 <span className="flex-shrink-0 text-[9px] font-black bg-slate-100 dark:bg-darkBorder text-slate-400 dark:text-darkMuted px-1.5 rounded-full">{doneCount}/{linkedTasks.length}</span>
                                                             </div>
                                                             <span className="text-[10px] text-slate-500 dark:text-darkMuted font-bold uppercase tracking-tighter">{getDaysRemaining(a.deadline)}</span>
@@ -430,32 +431,30 @@
                                     return (
                                         <div key={date} onClick={() => setSelectedDate(date)} className={`py-6 border-b border-slate-100 dark:border-darkBorder transition-all ${!isActive && !isRealToday && allTasks.length === 0 && dateAssigns.length === 0 ? 'opacity-40 grayscale' : ''}`}>
                                             <div className="flex flex-col gap-2 mb-4 px-2">
-                                                <div className="flex items-start gap-4">
-                                                    <span className={`text-[11px] font-bold uppercase tracking-wider whitespace-nowrap mt-1 flex-shrink-0 ${isActive ? 'text-black dark:text-white underline underline-offset-4' : 'text-slate-600 dark:text-darkMuted'}`}>{isRealToday ? 'Today' : formatDate(date)}</span>
+                                                <div className="flex items-center justify-between">
+                                                    <span className={`text-[11px] font-bold uppercase tracking-wider whitespace-nowrap ${isActive ? 'text-black dark:text-white underline underline-offset-4' : 'text-slate-600 dark:text-darkMuted'}`}>{isRealToday ? 'Today' : formatDate(date)}</span>
                                                     
-                                                    {/* Unified Objective Dropdown for Timeline */}
-                                                    <div className="flex-1 min-w-0">
-                                                        {dateAssigns.length > 0 && (
-                                                            <div className="relative inline-block w-full max-w-[140px]">
-                                                                <select 
-                                                                    className="obj-select w-full bg-black dark:bg-white text-white dark:text-black text-[9px] font-black uppercase tracking-tighter px-2 py-1.5 rounded-sm outline-none cursor-pointer"
-                                                                    onChange={(e) => {
-                                                                        const id = e.target.value;
-                                                                        if(id) {
-                                                                            navigateTo('objectives');
-                                                                            setExpandedGoalId(Number(id));
-                                                                        }
-                                                                    }}
-                                                                    defaultValue=""
-                                                                >
-                                                                    <option value="" disabled>{dateAssigns.length} Objective{dateAssigns.length > 1 ? 's' : ''}</option>
-                                                                    {dateAssigns.map(a => (
-                                                                        <option key={a.id} value={a.id}>{a.title}</option>
-                                                                    ))}
-                                                                </select>
-                                                            </div>
-                                                        )}
-                                                    </div>
+                                                    {/* Ultra-Minimal Objective Selector */}
+                                                    {dateAssigns.length > 0 && (
+                                                        <div className="relative">
+                                                            <select 
+                                                                className="minimal-select bg-slate-100/80 dark:bg-white/5 backdrop-blur-sm text-slate-500 dark:text-darkMuted text-[8px] font-black uppercase tracking-widest pl-3 py-1.5 rounded-full outline-none active:scale-95 border border-transparent dark:border-white/10"
+                                                                onChange={(e) => {
+                                                                    const id = e.target.value;
+                                                                    if(id) {
+                                                                        navigateTo('objectives');
+                                                                        setExpandedGoalId(Number(id));
+                                                                    }
+                                                                }}
+                                                                defaultValue=""
+                                                            >
+                                                                <option value="" disabled>{dateAssigns.length} Objective{dateAssigns.length > 1 ? 's' : ''}</option>
+                                                                {dateAssigns.map(a => (
+                                                                    <option key={a.id} value={a.id}>{a.title}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
 
