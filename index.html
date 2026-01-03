@@ -76,7 +76,7 @@
         .custom-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         .dark .custom-scroll::-webkit-scrollbar-thumb { background: #404040; }
 
-        /* NEW: Minimal Redesigned Button Style */
+        /* Minimal Button Design Kept Exactly the Same */
         .btn-minimal-trigger {
             appearance: none;
             -webkit-appearance: none;
@@ -96,27 +96,16 @@
             line-height: 1;
             transition: all 0.2s ease;
         }
-        .dark .btn-minimal-trigger {
-            border-color: #262626;
-            color: #737373;
-        }
-        .btn-minimal-trigger:hover {
-            border-color: #cbd5e1;
-            color: #64748b;
-        }
-        .dark .btn-minimal-trigger:hover {
-            border-color: #404040;
-            color: #a3a3a3;
-        }
+        .dark .btn-minimal-trigger { border-color: #262626; color: #737373; }
+        .btn-minimal-trigger:hover { border-color: #cbd5e1; color: #64748b; }
+        .dark .btn-minimal-trigger:hover { border-color: #404040; color: #a3a3a3; }
+        
         .btn-chevron {
             position: absolute;
             right: 4px;
             top: 50%;
             transform: translateY(-50%);
             transition: transform 0.3s ease;
-        }
-        .btn-chevron.open {
-            transform: translateY(-50%) rotate(180deg);
         }
     </style>
 </head>
@@ -140,7 +129,10 @@
             });
             const [activeTab, setActiveTab] = useState('timeline');
             const [openDoneDropdowns, setOpenDoneDropdowns] = useState({});
-            const [openObjectiveDropdowns, setOpenObjectiveDropdowns] = useState({});
+            
+            // State for the new Objective Pop-up Menu
+            const [objectivePopup, setObjectivePopup] = useState(null); 
+
             const [assignments, setAssignments] = useState(() => {
                 const saved = localStorage.getItem('school_assignments');
                 return saved ? JSON.parse(saved) : [];
@@ -293,10 +285,6 @@
 
             const toggleDoneDropdown = (date) => {
                 setOpenDoneDropdowns(prev => ({ ...prev, [date]: !prev[date] }));
-            };
-
-            const toggleObjectiveDropdown = (date) => {
-                setOpenObjectiveDropdowns(prev => ({ ...prev, [date]: !prev[date] }));
             };
 
             const getDaysRemaining = (deadline) => {
@@ -470,7 +458,6 @@
                                     const isActive = selectedDate === date;
                                     const isRealToday = date === todayStr;
                                     const isDoneOpen = !!openDoneDropdowns[date];
-                                    const isObjectivesOpen = !!openObjectiveDropdowns[date];
 
                                     return (
                                         <div key={date} onClick={() => setSelectedDate(date)} className={`py-6 border-b border-slate-100 dark:border-darkBorder transition-all ${!isActive && !isRealToday && allTasks.length === 0 && dateAssigns.length === 0 ? 'opacity-40 grayscale' : ''}`}>
@@ -481,25 +468,14 @@
                                                     {dateAssigns.length > 0 && (
                                                         <div className="relative inline-block" onClick={e => e.stopPropagation()}>
                                                             <button 
-                                                                onClick={() => toggleObjectiveDropdown(date)}
+                                                                onClick={() => setObjectivePopup({ date, items: dateAssigns })}
                                                                 className="btn-minimal-trigger"
                                                             >
                                                                 {dateAssigns.length} {dateAssigns.length === 1 ? 'Objective' : 'Objectives'}
-                                                                <svg className={`btn-chevron ${isObjectivesOpen ? 'open' : ''}`} width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                                                <svg className="btn-chevron" width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                                             </button>
                                                         </div>
                                                     )}
-                                                </div>
-                                                
-                                                {/* Objectives Dropdown Content */}
-                                                <div className={`dropdown-enter ${isObjectivesOpen ? 'dropdown-active' : ''}`}>
-                                                    <div className="flex flex-wrap gap-1.5 pt-2 pb-1">
-                                                        {dateAssigns.map(a => (
-                                                            <span key={a.id} className="text-[8px] font-bold text-white dark:text-black bg-black dark:bg-white px-1.5 py-0.5 uppercase tracking-wider rounded-[2px]">
-                                                                {a.title}
-                                                            </span>
-                                                        ))}
-                                                    </div>
                                                 </div>
                                             </div>
 
@@ -550,6 +526,25 @@
                                 })}
                             </div>
                         </section>
+                    )}
+
+                    {/* Objective Pop-up Menu */}
+                    {objectivePopup && (
+                        <div className="fixed inset-0 z-[300] bg-white/40 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setObjectivePopup(null)}>
+                            <div className="w-full max-w-[280px] bg-white dark:bg-[#1a1a1a] shadow-2xl rounded-2xl p-4 border border-slate-100 dark:border-darkBorder fade-in" onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-4 border-b border-slate-50 dark:border-darkBorder pb-2">
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-darkMuted">Objectives — {formatDate(objectivePopup.date)}</h4>
+                                    <button onClick={() => setObjectivePopup(null)} className="text-slate-300 hover:text-black dark:hover:text-white"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {objectivePopup.items.map(a => (
+                                        <span key={a.id} className="text-[10px] font-bold text-white dark:text-black bg-black dark:bg-white px-2 py-1 uppercase tracking-wider rounded">
+                                            {a.title}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
                     )}
 
                     {/* Navigation */}
