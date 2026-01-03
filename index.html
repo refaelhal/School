@@ -117,7 +117,6 @@
             const [confirmDelete, setConfirmDelete] = useState(null);
             const [deleteLinkedTasks, setDeleteLinkedTasks] = useState(false);
 
-            // History Navigation Logic (Swipe Protection)
             useEffect(() => {
                 window.history.pushState({ tab: activeTab }, '');
                 const handlePopState = (event) => {
@@ -434,19 +433,32 @@
                                     const isDoneOpen = !!openDoneDropdowns[date];
                                     const isObjectivesOpen = !!openObjectiveDropdowns[date];
                                     
-                                    // Dropdown Logic for too many objectives
+                                    // Dropdown Logic for overflow objectives
                                     const visibleAssigns = isObjectivesOpen ? dateAssigns : dateAssigns.slice(0, 2);
                                     const hiddenCount = dateAssigns.length - 2;
 
                                     return (
                                         <div key={date} onClick={() => setSelectedDate(date)} className={`py-6 border-b border-slate-100 dark:border-darkBorder transition-all ${!isActive && !isRealToday && allTasks.length === 0 && dateAssigns.length === 0 ? 'opacity-40 grayscale' : ''}`}>
                                             <div className="flex flex-col gap-2 mb-4 px-2">
-                                                <div className="flex items-center gap-3">
-                                                    <span className={`text-[11px] font-bold uppercase tracking-wider whitespace-nowrap ${isActive ? 'text-black dark:text-white underline underline-offset-4' : 'text-slate-600 dark:text-darkMuted'}`}>{isRealToday ? 'Today' : formatDate(date)}</span>
+                                                <div className="flex items-start gap-3">
+                                                    <span className={`text-[11px] font-bold uppercase tracking-wider whitespace-nowrap mt-1 ${isActive ? 'text-black dark:text-white underline underline-offset-4' : 'text-slate-600 dark:text-darkMuted'}`}>{isRealToday ? 'Today' : formatDate(date)}</span>
                                                     <div className="flex flex-wrap gap-1.5 overflow-hidden">
                                                         {visibleAssigns.map(a => (<span key={a.id} className="text-[9px] font-black text-white dark:text-black bg-black dark:bg-white px-2 py-0.5 uppercase rounded-sm truncate max-w-[120px]">{a.title}</span>))}
                                                         {hiddenCount > 0 && !isObjectivesOpen && (
-                                                            <button onClick={(e) => { e.stopPropagation(); toggleObjectiveDropdown(date); }} className="text-[9px] font-bold bg-slate-100 dark:bg-darkBorder text-slate-500 px-2 py-0.5 rounded-sm">+{hiddenCount} more</button>
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); toggleObjectiveDropdown(date); }} 
+                                                                className="text-[9px] font-bold bg-slate-100 dark:bg-darkBorder text-slate-500 px-2 py-0.5 rounded-sm hover:bg-slate-200 dark:hover:bg-darkBorder/80 transition-colors"
+                                                            >
+                                                                +{hiddenCount} more
+                                                            </button>
+                                                        )}
+                                                        {isObjectivesOpen && dateAssigns.length > 2 && (
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); toggleObjectiveDropdown(date); }} 
+                                                                className="text-[9px] font-bold text-slate-400 dark:text-darkMuted uppercase px-1"
+                                                            >
+                                                                Show less
+                                                            </button>
                                                         )}
                                                     </div>
                                                 </div>
