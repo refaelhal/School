@@ -226,7 +226,7 @@
                             </div>
                         </div>
                         
-                        {/* Circle Plus Button */}
+                        {/* Context-Aware Action Button */}
                         {(activeTab === 'timeline' || activeTab === 'objectives') && (
                             <button 
                                 onClick={handlePrimaryAction}
@@ -398,7 +398,7 @@
                         </section>
                     )}
 
-                    {/* Footer Navbar - Settings on Right */}
+                    {/* Footer Navbar - Added Settings Button */}
                     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[150] w-[180px]">
                         <div className="nav-blur border border-slate-200/40 dark:border-white/10 rounded-full h-[60px] flex items-center justify-between px-2 popup-shadow">
                             <button onClick={() => setActiveTab('timeline')} className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'timeline' ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg' : 'text-slate-400 dark:text-darkMuted'}`}>
@@ -419,9 +419,18 @@
                             <div className="w-full max-w-sm fade-in" onClick={e => e.stopPropagation()}>
                                 <h3 className="text-xl font-light mb-8 dark:text-white">New Objective</h3>
                                 <form onSubmit={addAssignment} className="space-y-8">
-                                    <div className="space-y-1"><label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-darkMuted">Title</label><input autoFocus value={assignTitle} onChange={e => setAssignTitle(e.target.value)} placeholder="Exam, Essay, Project..." className="w-full bg-transparent border-b border-slate-200 dark:border-darkBorder py-3 outline-none text-lg text-slate-800 dark:text-darkText focus:border-black dark:focus:border-white" /></div>
-                                    <div className="space-y-1"><label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-darkMuted">Deadline</label><input type="date" value={assignDeadline} onChange={e => setAssignDeadline(e.target.value)} className="w-full bg-transparent border-b border-slate-200 dark:border-darkBorder py-3 outline-none text-lg text-slate-800 dark:text-darkText" /></div>
-                                    <div className="flex gap-4 pt-4"><button type="submit" className="flex-1 bg-black dark:bg-white text-white dark:text-black py-4 font-bold text-xs uppercase tracking-widest">Create</button><button type="button" onClick={() => setShowAddModal(false)} className="flex-1 border border-slate-200 dark:border-darkBorder py-4 font-bold text-xs uppercase tracking-widest dark:text-white">Cancel</button></div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-darkMuted">Title</label>
+                                        <input autoFocus value={assignTitle} onChange={e => setAssignTitle(e.target.value)} placeholder="Exam, Essay, Project..." className="w-full bg-transparent border-b border-slate-200 dark:border-darkBorder py-3 outline-none text-lg text-slate-800 dark:text-darkText focus:border-black dark:focus:border-white" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-darkMuted">Deadline</label>
+                                        <input type="date" value={assignDeadline} onChange={e => setAssignDeadline(e.target.value)} className="w-full bg-transparent border-b border-slate-200 dark:border-darkBorder py-3 outline-none text-lg text-slate-800 dark:text-darkText" />
+                                    </div>
+                                    <div className="flex gap-4 pt-4">
+                                        <button type="submit" className="flex-1 bg-black dark:bg-white text-white dark:text-black py-4 font-bold text-xs uppercase tracking-widest">Create</button>
+                                        <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 border border-slate-200 dark:border-darkBorder py-4 font-bold text-xs uppercase tracking-widest dark:text-white">Cancel</button>
+                                    </div>
                                 </form>
                             </div>
                         </div>
