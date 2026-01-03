@@ -49,8 +49,7 @@
         .dark .popup-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5); }
         .nav-blur { backdrop-filter: blur(12px); background-color: rgba(255, 255, 255, 0.75); }
         .dark .nav-blur { background-color: rgba(20, 20, 20, 0.75); border-color: rgba(255, 255, 255, 0.1); }
-        .interactive-row:active { background-color: #f8fafc; }
-        .dark .interactive-row:active { background-color: #1a1a1a; }
+        /* Removed .interactive-row:active background */
         * { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.1s ease; }
     </style>
 </head>
@@ -99,7 +98,6 @@
             const [linkingTaskId, setLinkingTaskId] = useState(null);
             const [expandedGoalId, setExpandedGoalId] = useState(null);
             const [confirmDelete, setConfirmDelete] = useState(null); 
-            const [deleteLinkedTasks, setDeleteLinkedTasks] = useState(false);
 
             useEffect(() => { localStorage.setItem('school_assignments', JSON.stringify(assignments)); }, [assignments]);
             useEffect(() => { localStorage.setItem('daily_tasks', JSON.stringify(dailyTasks)); }, [dailyTasks]);
@@ -110,14 +108,12 @@
             const timelineDates = useMemo(() => {
                 const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 let endDate = new Date(start);
-                // The last day on the timeline is the day of the final deadline
                 if (assignments.length > 0) {
                     const dates = assignments.map(a => new Date(a.deadline + 'T00:00:00'));
                     endDate = new Date(Math.max(...dates));
                 } else {
                     endDate.setDate(endDate.getDate() + 7);
                 }
-                
                 const dateArray = [];
                 let currentDate = new Date(start);
                 while (currentDate <= endDate) {
@@ -137,17 +133,13 @@
                 return linked;
             };
 
-            const deleteAssignment = (id, shouldDeleteTasks) => {
+            const deleteAssignment = (id) => {
                 setAssignments(assignments.filter(a => a.id !== id));
                 const updatedDailyTasks = { ...dailyTasks };
                 Object.keys(updatedDailyTasks).forEach(date => {
-                    if (shouldDeleteTasks) {
-                        updatedDailyTasks[date] = updatedDailyTasks[date].filter(task => task.linkedGoalId !== id);
-                    } else {
-                        updatedDailyTasks[date] = updatedDailyTasks[date].map(task => 
-                            task.linkedGoalId === id ? { ...task, linkedGoalId: null } : task
-                        );
-                    }
+                    updatedDailyTasks[date] = updatedDailyTasks[date].map(task => 
+                        task.linkedGoalId === id ? { ...task, linkedGoalId: null } : task
+                    );
                 });
                 setDailyTasks(updatedDailyTasks);
                 setConfirmDelete(null);
@@ -238,6 +230,7 @@
                                 <div className="space-y-4">
                                     {assignments.map(a => {
                                         const linkedTasks = getLinkedTasksForGoal(a.id);
+                                        const doneCount = linkedTasks.filter(t => t.done).length;
                                         const isExpanded = expandedGoalId === a.id;
                                         return (
                                             <div key={a.id} className="border-b border-slate-50 dark:border-darkBorder pb-2 last:border-0">
@@ -247,7 +240,9 @@
                                                         <div className="flex flex-col">
                                                             <div className="flex items-center gap-2">
                                                                 <span className={`text-sm font-semibold ${isExpanded ? 'text-black dark:text-white' : 'text-slate-900 dark:text-darkText'}`}>{a.title}</span>
-                                                                <span className="text-[9px] font-black bg-slate-100 dark:bg-darkBorder text-slate-400 dark:text-darkMuted px-1.5 rounded-full">{linkedTasks.length}</span>
+                                                                <span className="text-[9px] font-black bg-slate-100 dark:bg-darkBorder text-slate-400 dark:text-darkMuted px-1.5 rounded-full">
+                                                                    {doneCount}/{linkedTasks.length}
+                                                                </span>
                                                             </div>
                                                             <span className="text-[10px] text-slate-500 dark:text-darkMuted font-bold uppercase tracking-tighter">{getDaysRemaining(a.deadline)}</span>
                                                         </div>
@@ -291,7 +286,7 @@
                                     const isDoneOpen = !!openDoneDropdowns[date];
 
                                     return (
-                                        <div key={date} onClick={() => setSelectedDate(date)} className={`py-6 border-b border-slate-100 dark:border-darkBorder transition-all interactive-row ${!isActive && !isRealToday && allTasks.length === 0 && dateAssigns.length === 0 ? 'opacity-40 grayscale' : ''} ${isActive ? 'bg-slate-50/30 dark:bg-white/5' : ''}`}>
+                                        <div key={date} onClick={() => setSelectedDate(date)} className={`py-6 border-b border-slate-100 dark:border-darkBorder transition-all ${!isActive && !isRealToday && allTasks.length === 0 && dateAssigns.length === 0 ? 'opacity-40 grayscale' : ''}`}>
                                             <div className="flex flex-wrap items-center gap-3 mb-4 px-2">
                                                 <span className={`text-[11px] font-bold uppercase tracking-wider flex-shrink-0 ${isActive ? 'text-black dark:text-white underline underline-offset-4' : 'text-slate-600 dark:text-darkMuted'}`}>{isRealToday ? 'Today' : formatDate(date)}</span>
                                                 {dateAssigns.length > 2 ? (
@@ -309,6 +304,32 @@
                                             </div>
 
                                             <div className="space-y-4 px-2">
+                                                {/* Done Tasks Dropdown (NOW ABOVE ACTIVE TASKS) */}
+                                                {doneTasks.length > 0 && (
+                                                    <div className="mb-2">
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); toggleDoneDropdown(date); }}
+                                                            className="flex items-center gap-2 text-[10px] font-bold text-slate-400 dark:text-darkMuted uppercase tracking-widest hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                                                        >
+                                                            <svg className={`transition-transform duration-200 ${isDoneOpen ? 'rotate-90' : ''}`} width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                                            Completed ({doneTasks.length})
+                                                        </button>
+                                                        <div className={`dropdown-enter ${isDoneOpen ? 'dropdown-active' : ''}`}>
+                                                            <div className="pt-3 space-y-3 pb-2">
+                                                                {doneTasks.map(t => (
+                                                                    <div key={t.id} className="flex items-center gap-4 opacity-60 group">
+                                                                        <div onClick={() => toggleTask(date, t.id)} className="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-black dark:bg-white">
+                                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isDark ? "black" : "white"} strokeWidth="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                                        </div>
+                                                                        <span className="text-sm text-slate-400 dark:text-darkMuted line-through flex-1">{t.text}</span>
+                                                                        <button onClick={() => setConfirmDelete({ type: 'task', id: t.id, date })} className="text-slate-300 dark:text-darkMuted hover:text-red-500 p-2"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
                                                 {/* Active Tasks */}
                                                 {activeTasks.map(t => {
                                                     const linkedGoal = assignments.find(a => a.id === t.linkedGoalId);
@@ -337,32 +358,6 @@
                                                     );
                                                 })}
 
-                                                {/* Completed Tasks Dropdown */}
-                                                {doneTasks.length > 0 && (
-                                                    <div className="mt-4">
-                                                        <button 
-                                                            onClick={(e) => { e.stopPropagation(); toggleDoneDropdown(date); }}
-                                                            className="flex items-center gap-2 text-[10px] font-bold text-slate-400 dark:text-darkMuted uppercase tracking-widest hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                                                        >
-                                                            <svg className={`transition-transform duration-200 ${isDoneOpen ? 'rotate-90' : ''}`} width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                                                            Completed ({doneTasks.length})
-                                                        </button>
-                                                        <div className={`dropdown-enter ${isDoneOpen ? 'dropdown-active' : ''}`}>
-                                                            <div className="pt-3 space-y-3">
-                                                                {doneTasks.map(t => (
-                                                                    <div key={t.id} className="flex items-center gap-4 opacity-60">
-                                                                        <div onClick={() => toggleTask(date, t.id)} className="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-black dark:bg-white">
-                                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isDark ? "black" : "white"} strokeWidth="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                                                        </div>
-                                                                        <span className="text-sm text-slate-400 dark:text-darkMuted line-through flex-1">{t.text}</span>
-                                                                        <button onClick={() => setConfirmDelete({ type: 'task', id: t.id, date })} className="text-slate-300 dark:text-darkMuted hover:text-red-500 p-2"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-
                                                 <div className={`dropdown-enter ${isActive ? 'dropdown-active' : ''}`}>
                                                     <div className="pl-10 py-2">
                                                         <input placeholder="Add task..." value={isActive ? newTaskText : ''} onChange={(e) => setNewTaskText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addDailyTask(date)} className="w-full bg-transparent border-none outline-none text-sm py-1 placeholder:text-slate-300 dark:placeholder:text-darkMuted text-slate-700 dark:text-slate-200 font-medium"/>
@@ -376,6 +371,7 @@
                         </section>
                     )}
 
+                    {/* Nav */}
                     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[150] w-[130px]">
                         <div className="nav-blur border border-slate-200/40 dark:border-white/10 rounded-full h-[60px] flex items-center justify-between px-2 popup-shadow">
                             <button onClick={() => setActiveTab('timeline')} className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'timeline' ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg' : 'text-slate-400 dark:text-darkMuted'}`}>
@@ -388,6 +384,7 @@
                         </div>
                     </div>
 
+                    {/* Add Modal */}
                     {showAddModal && (
                         <div className="fixed inset-0 z-[200] modal-overlay flex items-center justify-center p-6" onClick={() => setShowAddModal(false)}>
                             <div className="w-full max-w-sm fade-in" onClick={e => e.stopPropagation()}>
@@ -401,13 +398,14 @@
                         </div>
                     )}
 
+                    {/* Delete Confirm */}
                     {confirmDelete && (
                         <div className="fixed inset-0 z-[300] modal-overlay flex items-center justify-center p-6" onClick={() => setConfirmDelete(null)}>
                             <div className="w-full max-w-sm fade-in bg-white dark:bg-darkCard p-8 border border-slate-100 dark:border-darkBorder popup-shadow" onClick={e => e.stopPropagation()}>
                                 <h3 className="text-lg font-light mb-4 dark:text-white">Confirm Delete</h3>
                                 <p className="text-sm text-slate-500 dark:text-darkMuted mb-6">Remove this {confirmDelete.type}?</p>
                                 <div className="flex gap-4">
-                                    <button onClick={() => confirmDelete.type === 'goal' ? deleteAssignment(confirmDelete.id, deleteLinkedTasks) : deleteTask(confirmDelete.date, confirmDelete.id)} className="flex-1 bg-red-500 text-white py-3 font-bold text-[10px] uppercase tracking-widest">Delete</button>
+                                    <button onClick={() => confirmDelete.type === 'goal' ? deleteAssignment(confirmDelete.id) : deleteTask(confirmDelete.date, confirmDelete.id)} className="flex-1 bg-red-500 text-white py-3 font-bold text-[10px] uppercase tracking-widest">Delete</button>
                                     <button onClick={() => setConfirmDelete(null)} className="flex-1 bg-slate-100 dark:bg-darkBorder py-3 font-bold text-[10px] uppercase tracking-widest dark:text-white">Cancel</button>
                                 </div>
                             </div>
