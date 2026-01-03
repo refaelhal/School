@@ -36,19 +36,37 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
         body.dark { background-color: #0a0a0a; color: #f5f5f5; }
-        .modal-overlay { background-color: rgba(255, 255, 255, 0.98); backdrop-filter: blur(8px); }
-        .dark .modal-overlay { background-color: rgba(10, 10, 10, 0.98); }
+        
+        /* Dynamic Island Animations */
+        .island-container {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1.2);
+            transform-origin: top center;
+        }
+        .island-collapsed {
+            width: 120px;
+            height: 36px;
+            border-radius: 20px;
+        }
+        .island-expanded {
+            width: 100%;
+            height: auto;
+            border-radius: 28px;
+            padding: 24px;
+        }
+
         .fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+        
         .dropdown-enter { max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; }
         .dropdown-active { max-height: 1000px; opacity: 1; }
+        
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         .dark .custom-scroll::-webkit-scrollbar-thumb { background: #404040; }
-        .popup-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); }
-        .dark .popup-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5); }
+        
         .nav-blur { backdrop-filter: blur(12px); background-color: rgba(255, 255, 255, 0.75); }
         .dark .nav-blur { background-color: rgba(20, 20, 20, 0.75); border-color: rgba(255, 255, 255, 0.1); }
+        
         * { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.1s ease; }
     </style>
 </head>
@@ -56,7 +74,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo, useRef } = React;
+        const { useState, useEffect, useMemo } = React;
 
         const App = () => {
             const getLocalDateString = (date) => {
@@ -77,24 +95,22 @@
             }, [isDark]);
 
             const [activeTab, setActiveTab] = useState('timeline');
-            const [openDateDropdown, setOpenDateDropdown] = useState(null);
             const [openDoneDropdowns, setOpenDoneDropdowns] = useState({});
-            
             const [assignments, setAssignments] = useState(() => {
                 const saved = localStorage.getItem('school_assignments');
                 return saved ? JSON.parse(saved) : [];
             });
-
             const [dailyTasks, setDailyTasks] = useState(() => {
                 const saved = localStorage.getItem('daily_tasks');
                 return saved ? JSON.parse(saved) : {};
             });
 
-            const [showAddModal, setShowAddModal] = useState(false);
+            // State for the Dynamic Island
+            const [islandType, setIslandType] = useState(null); // 'task', 'goal', or null
             const [modalData, setModalData] = useState({ title: '', date: '', linkedGoalId: '' });
             const [linkingTaskId, setLinkingTaskId] = useState(null);
             const [expandedGoalId, setExpandedGoalId] = useState(null);
-            const [confirmDelete, setConfirmDelete] = useState(null); 
+            const [confirmDelete, setConfirmDelete] = useState(null);
 
             useEffect(() => { localStorage.setItem('school_assignments', JSON.stringify(assignments)); }, [assignments]);
             useEffect(() => { localStorage.setItem('daily_tasks', JSON.stringify(dailyTasks)); }, [dailyTasks]);
@@ -120,16 +136,16 @@
                 return dateArray;
             }, [assignments, now]);
 
-            const openContextModal = () => {
+            const handleIslandOpen = (type) => {
                 setModalData({ title: '', date: todayStr, linkedGoalId: '' });
-                setShowAddModal(activeTab === 'timeline' ? 'task' : 'goal');
+                setIslandType(type);
             };
 
             const handleModalSubmit = (e) => {
                 e.preventDefault();
                 if (!modalData.title || !modalData.date) return;
 
-                if (showAddModal === 'goal') {
+                if (islandType === 'goal') {
                     setAssignments([...assignments, { 
                         id: Date.now(), 
                         title: modalData.title, 
@@ -147,7 +163,7 @@
                         [modalData.date]: [...(prev[modalData.date] || []), newTask]
                     }));
                 }
-                setShowAddModal(false);
+                setIslandType(null);
             };
 
             const getLinkedTasksForGoal = (goalId) => {
@@ -214,8 +230,64 @@
             }, [dailyTasks, todayStr]);
 
             return (
-                <div className="max-w-xl mx-auto px-6 pt-16 pb-32 w-full relative fade-in min-h-screen">
-                    <div className="flex justify-between items-start mb-16">
+                <div className="max-w-xl mx-auto px-6 pt-10 pb-32 w-full relative min-h-screen">
+                    
+                    {/* Dynamic Island Header */}
+                    <div className="fixed top-4 left-0 right-0 z-[200] flex justify-center px-6">
+                        <div className={`island-container bg-black dark:bg-[#1a1a1a] shadow-2xl overflow-hidden ${islandType ? 'island-expanded' : 'island-collapsed'}`}>
+                            {!islandType ? (
+                                <div className="h-full flex items-center justify-between px-4">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                                    <span className="text-[10px] text-white font-bold tracking-widest uppercase">Flow</span>
+                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                </div>
+                            ) : (
+                                <div className="fade-in">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-white text-xs font-bold uppercase tracking-[0.2em]">
+                                            New {islandType === 'goal' ? 'Objective' : 'Task'}
+                                        </h3>
+                                        <button onClick={() => setIslandType(null)} className="text-white/40 hover:text-white">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                        </button>
+                                    </div>
+                                    <form onSubmit={handleModalSubmit} className="space-y-5">
+                                        <input 
+                                            autoFocus 
+                                            value={modalData.title} 
+                                            onChange={e => setModalData({...modalData, title: e.target.value})} 
+                                            placeholder="Enter title..." 
+                                            className="w-full bg-white/5 border-b border-white/10 py-3 px-1 outline-none text-white text-base placeholder:text-white/20 focus:border-white/40" 
+                                        />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <label className="text-[9px] font-black text-white/40 uppercase">Date</label>
+                                                <input type="date" value={modalData.date} onChange={e => setModalData({...modalData, date: e.target.value})} className="w-full bg-transparent border-b border-white/10 py-1 outline-none text-sm text-white" />
+                                            </div>
+                                            {islandType === 'task' && assignments.length > 0 && (
+                                                <div className="space-y-1">
+                                                    <label className="text-[9px] font-black text-white/40 uppercase">Link</label>
+                                                    <select 
+                                                        value={modalData.linkedGoalId} 
+                                                        onChange={e => setModalData({...modalData, linkedGoalId: e.target.value})}
+                                                        className="w-full bg-transparent border-b border-white/10 py-1 outline-none text-sm text-white"
+                                                    >
+                                                        <option value="" className="text-black">None</option>
+                                                        {assignments.map(a => <option key={a.id} value={a.id} className="text-black">{a.title}</option>)}
+                                                    </select>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <button type="submit" className="w-full bg-white text-black py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-transform">
+                                            Create Entry
+                                        </button>
+                                    </form>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex justify-between items-start mb-16 mt-12">
                         <div>
                             <h1 className="text-2xl font-light tracking-tight text-slate-900 dark:text-darkText">Study Flow</h1>
                             <div className="mt-2 flex items-center gap-3">
@@ -228,14 +300,15 @@
                         
                         {activeTab !== 'settings' && (
                             <button 
-                                onClick={openContextModal}
-                                className="w-10 h-10 rounded-full border border-slate-200 dark:border-darkBorder flex items-center justify-center text-slate-400 hover:text-black dark:hover:text-white hover:border-black dark:hover:border-white transition-all active:scale-95"
+                                onClick={() => handleIslandOpen(activeTab === 'timeline' ? 'task' : 'goal')}
+                                className="w-10 h-10 rounded-full border border-slate-200 dark:border-darkBorder flex items-center justify-center text-slate-400 hover:text-black dark:hover:text-white hover:border-black dark:hover:border-white transition-all active:scale-90"
                             >
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             </button>
                         )}
                     </div>
 
+                    {/* All other sections (Settings, Objectives, Timeline) remain exactly as you had them */}
                     {activeTab === 'settings' && (
                         <section className="fade-in">
                             <h2 className="text-[10px] font-bold text-slate-500 dark:text-darkMuted uppercase tracking-[0.2em] mb-6 border-b border-slate-100 dark:border-darkBorder pb-2">Settings</h2>
@@ -326,7 +399,6 @@
                                             </div>
 
                                             <div className="space-y-4 px-2">
-                                                {/* Completed dropdown */}
                                                 {doneTasks.length > 0 && (
                                                     <div className="mb-2">
                                                         <button onClick={(e) => { e.stopPropagation(); toggleDoneDropdown(date); }} className="flex items-center gap-2 text-[10px] font-bold text-slate-400 dark:text-darkMuted uppercase tracking-widest hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
@@ -349,7 +421,6 @@
                                                     </div>
                                                 )}
 
-                                                {/* Active Tasks */}
                                                 {activeTasks.map(t => {
                                                     const linkedGoal = assignments.find(a => a.id === t.linkedGoalId);
                                                     return (
@@ -364,7 +435,7 @@
                                                                     <button onClick={(e) => { e.stopPropagation(); if (t.linkedGoalId) linkTaskToGoal(date, t.id, null); else setLinkingTaskId(linkingTaskId === t.id ? null : t.id); }} className={`text-[10px] font-black uppercase tracking-tighter px-2 py-1 transition-colors ${t.linkedGoalId ? 'text-red-500' : (linkingTaskId === t.id ? 'text-black dark:text-white underline' : 'text-slate-300 dark:text-darkMuted hover:text-black dark:hover:text-white')}`}>{t.linkedGoalId ? 'Unlink' : 'Link'}</button>
                                                                     <button onClick={(e) => { e.stopPropagation(); setConfirmDelete({ type: 'task', id: t.id, date }); }} className="text-slate-400 dark:text-darkMuted hover:text-red-500 transition-colors p-2"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
                                                                     {linkingTaskId === t.id && (
-                                                                        <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder popup-shadow z-50 rounded-lg overflow-hidden fade-in" onClick={e => e.stopPropagation()}>
+                                                                        <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder shadow-xl z-50 rounded-lg overflow-hidden fade-in" onClick={e => e.stopPropagation()}>
                                                                             <div className="p-3 border-b border-slate-50 dark:border-darkBorder bg-slate-50/50 dark:bg-white/5"><span className="text-[9px] font-bold uppercase text-slate-400 dark:text-darkMuted">Select Goal</span></div>
                                                                             <div className="max-h-40 overflow-y-auto custom-scroll">
                                                                                 {assignments.map(goal => (<button key={goal.id} onClick={() => linkTaskToGoal(date, t.id, goal.id)} className="w-full text-left px-4 py-3 text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 border-b border-slate-50 dark:border-darkBorder last:border-0 truncate">{goal.title}</button>))}
@@ -384,9 +455,9 @@
                         </section>
                     )}
 
-                    {/* Footer Navbar */}
+                    {/* Navigation */}
                     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[150] w-[180px]">
-                        <div className="nav-blur border border-slate-200/40 dark:border-white/10 rounded-full h-[60px] flex items-center justify-between px-2 popup-shadow">
+                        <div className="nav-blur border border-slate-200/40 dark:border-white/10 rounded-full h-[60px] flex items-center justify-between px-2 shadow-xl">
                             <button onClick={() => setActiveTab('timeline')} className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'timeline' ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg' : 'text-slate-400 dark:text-darkMuted'}`}>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                             </button>
@@ -399,54 +470,14 @@
                         </div>
                     </div>
 
-                    {/* Unified Add Modal */}
-                    {showAddModal && (
-                        <div className="fixed inset-0 z-[200] modal-overlay flex items-center justify-center p-6" onClick={() => setShowAddModal(false)}>
-                            <div className="w-full max-w-sm fade-in" onClick={e => e.stopPropagation()}>
-                                <h3 className="text-xl font-light mb-8 dark:text-white">
-                                    {showAddModal === 'goal' ? 'New Objective' : 'New Task'}
-                                </h3>
-                                <form onSubmit={handleModalSubmit} className="space-y-6">
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-darkMuted">Name</label>
-                                        <input autoFocus value={modalData.title} onChange={e => setModalData({...modalData, title: e.target.value})} placeholder="..." className="w-full bg-transparent border-b border-slate-200 dark:border-darkBorder py-3 outline-none text-lg text-slate-800 dark:text-darkText focus:border-black dark:focus:border-white" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-darkMuted">Date</label>
-                                        <input type="date" value={modalData.date} onChange={e => setModalData({...modalData, date: e.target.value})} className="w-full bg-transparent border-b border-slate-200 dark:border-darkBorder py-3 outline-none text-lg text-slate-800 dark:text-darkText" />
-                                    </div>
-                                    
-                                    {showAddModal === 'task' && assignments.length > 0 && (
-                                        <div className="space-y-1">
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-darkMuted">Link to Objective</label>
-                                            <select 
-                                                value={modalData.linkedGoalId} 
-                                                onChange={e => setModalData({...modalData, linkedGoalId: e.target.value})}
-                                                className="w-full bg-transparent border-b border-slate-200 dark:border-darkBorder py-3 outline-none text-lg text-slate-800 dark:text-darkText"
-                                            >
-                                                <option value="">None</option>
-                                                {assignments.map(a => <option key={a.id} value={a.id}>{a.title}</option>)}
-                                            </select>
-                                        </div>
-                                    )}
-
-                                    <div className="flex gap-4 pt-4">
-                                        <button type="submit" className="flex-1 bg-black dark:bg-white text-white dark:text-black py-4 font-bold text-xs uppercase tracking-widest">Create</button>
-                                        <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 border border-slate-200 dark:border-darkBorder py-4 font-bold text-xs uppercase tracking-widest dark:text-white">Cancel</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
-
                     {confirmDelete && (
-                        <div className="fixed inset-0 z-[300] modal-overlay flex items-center justify-center p-6" onClick={() => setConfirmDelete(null)}>
-                            <div className="w-full max-w-sm fade-in bg-white dark:bg-darkCard p-8 border border-slate-100 dark:border-darkBorder popup-shadow" onClick={e => e.stopPropagation()}>
+                        <div className="fixed inset-0 z-[300] bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setConfirmDelete(null)}>
+                            <div className="w-full max-w-sm fade-in bg-white dark:bg-darkCard p-8 border border-slate-100 dark:border-darkBorder shadow-2xl rounded-2xl" onClick={e => e.stopPropagation()}>
                                 <h3 className="text-lg font-light mb-4 dark:text-white">Confirm Delete</h3>
                                 <p className="text-sm text-slate-500 dark:text-darkMuted mb-6">Remove this {confirmDelete.type}?</p>
                                 <div className="flex gap-4">
-                                    <button onClick={() => confirmDelete.type === 'goal' ? deleteAssignment(confirmDelete.id) : deleteTask(confirmDelete.date, confirmDelete.id)} className="flex-1 bg-red-500 text-white py-3 font-bold text-[10px] uppercase tracking-widest">Delete</button>
-                                    <button onClick={() => setConfirmDelete(null)} className="flex-1 bg-slate-100 dark:bg-darkBorder py-3 font-bold text-[10px] uppercase tracking-widest dark:text-white">Cancel</button>
+                                    <button onClick={() => confirmDelete.type === 'goal' ? deleteAssignment(confirmDelete.id) : deleteTask(confirmDelete.date, confirmDelete.id)} className="flex-1 bg-red-500 text-white py-3 font-bold text-[10px] uppercase tracking-widest rounded-lg">Delete</button>
+                                    <button onClick={() => setConfirmDelete(null)} className="flex-1 bg-slate-100 dark:bg-darkBorder py-3 font-bold text-[10px] uppercase tracking-widest dark:text-white rounded-lg">Cancel</button>
                                 </div>
                             </div>
                         </div>
