@@ -76,32 +76,31 @@
         .custom-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         .dark .custom-scroll::-webkit-scrollbar-thumb { background: #404040; }
 
-        /* Updated Objective Toggle: Slightly wider, medium weight */
+        /* Updated Objective Button: Fit-to-text width and smaller height */
         .objective-compact-btn {
             appearance: none;
             -webkit-appearance: none;
             background: transparent;
             border: 1px solid #e2e8f0;
-            padding: 4px 26px 4px 10px;
-            font-weight: 500; /* Changed from 800 (black) to 500 (medium) */
+            padding: 2px 22px 2px 8px; /* Reduced vertical padding */
+            font-weight: 500;
             text-transform: uppercase;
-            font-size: 10px; /* Slightly larger text for clarity */
+            font-size: 9px; /* Slightly smaller text */
             letter-spacing: 0.02em;
             cursor: pointer;
             outline: none;
-            border-radius: 6px;
+            border-radius: 4px;
             color: #64748b;
             line-height: 1;
-            width: 110px; /* Increased width to prevent cutting off "Objectives" */
+            width: fit-content; /* Dynamically sizes to text */
+            min-width: 60px;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
             position: relative;
         }
         .dark .objective-compact-btn { border-color: #262626; color: #a3a3a3; }
         .objective-chevron {
             position: absolute;
-            right: 8px;
+            right: 6px;
             top: 50%;
             transform: translateY(-50%);
             pointer-events: none;
