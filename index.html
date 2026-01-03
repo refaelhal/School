@@ -75,6 +75,31 @@
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         .dark .custom-scroll::-webkit-scrollbar-thumb { background: #404040; }
+
+        /* Objective Dropdown Menu Styles */
+        .obj-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            z-index: 50;
+            min-width: 180px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            padding: 6px;
+            margin-top: 4px;
+            animation: menuFade 0.2s ease-out;
+        }
+        .dark .obj-menu {
+            background: #1a1a1a;
+            border-color: #262626;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        @keyframes menuFade {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body class="text-slate-900 font-sans selection:bg-slate-100 dark:text-darkText dark:selection:bg-white/10">
@@ -97,7 +122,7 @@
             });
             const [activeTab, setActiveTab] = useState('timeline');
             const [openDoneDropdowns, setOpenDoneDropdowns] = useState({});
-            const [openObjectiveDropdowns, setOpenObjectiveDropdowns] = useState({});
+            const [openObjectiveMenu, setOpenObjectiveMenu] = useState(null); 
             const [assignments, setAssignments] = useState(() => {
                 const saved = localStorage.getItem('school_assignments');
                 return saved ? JSON.parse(saved) : [];
@@ -124,6 +149,15 @@
                 window.addEventListener('popstate', handlePopState);
                 return () => window.removeEventListener('popstate', handlePopState);
             }, []);
+
+            // Handle clicking outside to close the objective menu
+            useEffect(() => {
+                const closeMenu = () => setOpenObjectiveMenu(null);
+                if (openObjectiveMenu) {
+                    window.addEventListener('click', closeMenu);
+                }
+                return () => window.removeEventListener('click', closeMenu);
+            }, [openObjectiveMenu]);
 
             const navigateTo = (tab) => {
                 if (tab !== activeTab) {
@@ -252,8 +286,9 @@
                 setOpenDoneDropdowns(prev => ({ ...prev, [date]: !prev[date] }));
             };
 
-            const toggleObjectiveDropdown = (date) => {
-                setOpenObjectiveDropdowns(prev => ({ ...prev, [date]: !prev[date] }));
+            const toggleObjectiveMenu = (e, date) => {
+                e.stopPropagation();
+                setOpenObjectiveMenu(openObjectiveMenu === date ? null : date);
             };
 
             const getDaysRemaining = (deadline) => {
@@ -382,17 +417,17 @@
                                         return (
                                             <div key={a.id} className="border-b border-slate-50 dark:border-darkBorder pb-2 last:border-0">
                                                 <div onClick={() => setExpandedGoalId(isExpanded ? null : a.id)} className="flex justify-between items-center group cursor-pointer py-2">
-                                                    <div className="flex items-center gap-3 min-w-0">
-                                                        <svg className={`flex-shrink-0 text-slate-300 dark:text-darkMuted transition-transform duration-300 ${isExpanded ? 'rotate-90 text-black dark:text-white' : ''}`} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                                                        <div className="flex flex-col min-w-0">
-                                                            <div className="flex items-center gap-2 min-w-0">
-                                                                <span className={`text-sm font-semibold truncate max-w-[180px] ${isExpanded ? 'text-black dark:text-white' : 'text-slate-900 dark:text-darkText'}`}>{a.title}</span>
-                                                                <span className="flex-shrink-0 text-[9px] font-black bg-slate-100 dark:bg-darkBorder text-slate-400 dark:text-darkMuted px-1.5 rounded-full">{doneCount}/{linkedTasks.length}</span>
+                                                    <div className="flex items-center gap-3">
+                                                        <svg className={`text-slate-300 dark:text-darkMuted transition-transform duration-300 ${isExpanded ? 'rotate-90 text-black dark:text-white' : ''}`} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                                        <div className="flex flex-col">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`text-sm font-semibold ${isExpanded ? 'text-black dark:text-white' : 'text-slate-900 dark:text-darkText'}`}>{a.title}</span>
+                                                                <span className="text-[9px] font-black bg-slate-100 dark:bg-darkBorder text-slate-400 dark:text-darkMuted px-1.5 rounded-full">{doneCount}/{linkedTasks.length}</span>
                                                             </div>
                                                             <span className="text-[10px] text-slate-500 dark:text-darkMuted font-bold uppercase tracking-tighter">{getDaysRemaining(a.deadline)}</span>
                                                         </div>
                                                     </div>
-                                                    <button onClick={(e) => { e.stopPropagation(); setConfirmDelete({ type: 'objective', id: a.id }); }} className="flex-shrink-0 text-slate-300 dark:text-darkMuted hover:text-red-500 p-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                                                    <button onClick={(e) => { e.stopPropagation(); setConfirmDelete({ type: 'objective', id: a.id }); }} className="text-slate-300 dark:text-darkMuted hover:text-red-500 p-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
                                                 </div>
                                                 <div className={`dropdown-enter ${isExpanded ? 'dropdown-active' : ''}`}>
                                                     <div className="mt-2 mb-4 ml-6 space-y-3 border-l-2 border-slate-50 dark:border-darkBorder pl-4">
@@ -427,33 +462,36 @@
                                     const isActive = selectedDate === date;
                                     const isRealToday = date === todayStr;
                                     const isDoneOpen = !!openDoneDropdowns[date];
-                                    const isObjectivesOpen = !!openObjectiveDropdowns[date];
+                                    const isObjMenuOpen = openObjectiveMenu === date;
 
                                     return (
                                         <div key={date} onClick={() => setSelectedDate(date)} className={`py-6 border-b border-slate-100 dark:border-darkBorder transition-all ${!isActive && !isRealToday && allTasks.length === 0 && dateAssigns.length === 0 ? 'opacity-40 grayscale' : ''}`}>
                                             <div className="flex flex-col gap-2 mb-4 px-2">
-                                                <div className="flex items-start gap-4">
+                                                <div className="flex items-start gap-3 relative">
                                                     <span className={`text-[11px] font-bold uppercase tracking-wider whitespace-nowrap mt-1 ${isActive ? 'text-black dark:text-white underline underline-offset-4' : 'text-slate-600 dark:text-darkMuted'}`}>{isRealToday ? 'Today' : formatDate(date)}</span>
                                                     
                                                     {dateAssigns.length > 0 && (
-                                                        <div className="flex flex-col flex-1 min-w-0">
+                                                        <div className="relative">
                                                             <button 
-                                                                onClick={(e) => { e.stopPropagation(); toggleObjectiveDropdown(date); }}
-                                                                className="flex items-center gap-2 text-[10px] font-bold text-slate-400 dark:text-darkMuted uppercase tracking-widest hover:text-slate-600 transition-colors"
+                                                                onClick={(e) => toggleObjectiveMenu(e, date)}
+                                                                className="flex items-center gap-1.5 text-[9px] font-black bg-black dark:bg-white text-white dark:text-black px-2.5 py-1 uppercase rounded-full hover:scale-105 active:scale-95 transition-all"
                                                             >
-                                                                <svg className={`transition-transform duration-200 ${isObjectivesOpen ? 'rotate-90' : ''}`} width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="9 18 15 12 9 6"></polyline></svg>
                                                                 Objectives ({dateAssigns.length})
+                                                                <svg className={`transition-transform duration-200 ${isObjMenuOpen ? 'rotate-180' : ''}`} width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                                             </button>
-                                                            
-                                                            <div className={`dropdown-enter ${isObjectivesOpen ? 'dropdown-active' : ''}`}>
-                                                                <div className="flex flex-col gap-1.5 mt-2">
-                                                                    {dateAssigns.map(a => (
-                                                                        <span key={a.id} className="text-[9px] font-black text-white dark:text-black bg-black dark:bg-white px-2 py-1 uppercase rounded-sm truncate w-fit max-w-[200px]">
-                                                                            {a.title}
-                                                                        </span>
-                                                                    ))}
+
+                                                            {/* iOS-Style Dropdown Menu */}
+                                                            {isObjMenuOpen && (
+                                                                <div className="obj-menu" onClick={(e) => e.stopPropagation()}>
+                                                                    <div className="max-h-48 overflow-y-auto custom-scroll">
+                                                                        {dateAssigns.map(a => (
+                                                                            <div key={a.id} className="px-3 py-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-md transition-colors border-b border-slate-50 dark:border-white/5 last:border-0">
+                                                                                <p className="text-[10px] font-bold text-slate-800 dark:text-darkText uppercase tracking-tight">{a.title}</p>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
                                                                 </div>
-                                                            </div>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
@@ -490,7 +528,7 @@
                                                                 <div onClick={() => toggleTask(date, t.id)} className={`w-6 h-6 flex-shrink-0 flex items-center justify-center border-2 border-slate-300 dark:border-darkBorder`}></div>
                                                                 <div className="flex-1 flex flex-row items-baseline gap-2 min-w-0" onClick={() => toggleTask(date, t.id)}>
                                                                     <span className="text-sm truncate text-slate-800 dark:text-darkText font-medium">{t.text}</span>
-                                                                    {linkedGoal && <span className="flex-shrink-0 text-[8px] font-bold uppercase tracking-[0.05em] px-1.5 py-0.5 rounded border text-slate-400 border-slate-100 dark:text-darkMuted dark:border-darkBorder truncate max-w-[100px]">{linkedGoal.title}</span>}
+                                                                    {linkedGoal && <span className="flex-shrink-0 text-[8px] font-bold uppercase tracking-[0.05em] px-1.5 py-0.5 rounded border text-slate-400 border-slate-100 dark:text-darkMuted dark:border-darkBorder">{linkedGoal.title}</span>}
                                                                 </div>
                                                                 <div className="flex items-center gap-1">
                                                                     <button onClick={(e) => { e.stopPropagation(); if (t.linkedGoalId) linkTaskToGoal(date, t.id, null); else handleOpenIsland('link_existing', { ...t, date }); }} className={`text-[10px] font-black uppercase tracking-tighter px-2 py-1 transition-colors ${t.linkedGoalId ? 'text-red-500' : 'text-slate-300 dark:text-darkMuted hover:text-black dark:hover:text-white'}`}>{t.linkedGoalId ? 'Unlink' : 'Link'}</button>
