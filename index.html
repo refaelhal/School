@@ -76,23 +76,23 @@
         .custom-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         .dark .custom-scroll::-webkit-scrollbar-thumb { background: #404040; }
 
-        /* Compact, fixed-size Objective Toggle */
+        /* Updated Objective Toggle: Slightly wider, medium weight */
         .objective-compact-btn {
             appearance: none;
             -webkit-appearance: none;
             background: transparent;
             border: 1px solid #e2e8f0;
-            padding: 4px 24px 4px 10px;
-            font-weight: 800;
+            padding: 4px 26px 4px 10px;
+            font-weight: 500; /* Changed from 800 (black) to 500 (medium) */
             text-transform: uppercase;
-            font-size: 9px;
-            letter-spacing: 0.05em;
+            font-size: 10px; /* Slightly larger text for clarity */
+            letter-spacing: 0.02em;
             cursor: pointer;
             outline: none;
             border-radius: 6px;
             color: #64748b;
             line-height: 1;
-            width: 95px; /* Fixed width to prevent expanding with long text */
+            width: 110px; /* Increased width to prevent cutting off "Objectives" */
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -464,7 +464,7 @@
                                                     {dateAssigns.length > 0 && (
                                                         <div className="relative inline-block" onClick={e => e.stopPropagation()}>
                                                             <select className="objective-compact-btn">
-                                                                <option disabled hidden value="">{dateAssigns.length} Goals</option>
+                                                                <option disabled hidden value="">{dateAssigns.length} Objectives</option>
                                                                 {dateAssigns.map(a => <option key={a.id} disabled>{a.title}</option>)}
                                                             </select>
                                                             <svg className="objective-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="6 9 12 15 18 9"></polyline></svg>
