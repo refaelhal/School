@@ -79,9 +79,7 @@
             const [activeTab, setActiveTab] = useState('timeline');
             const [openDateDropdown, setOpenDateDropdown] = useState(null);
             const [openDoneDropdowns, setOpenDoneDropdowns] = useState({});
-            const [showTaskInput, setShowTaskInput] = useState(false);
-            const taskInputRef = useRef(null);
-
+            
             const [assignments, setAssignments] = useState(() => {
                 const saved = localStorage.getItem('school_assignments');
                 return saved ? JSON.parse(saved) : [];
@@ -93,9 +91,7 @@
             });
 
             const [showAddModal, setShowAddModal] = useState(false);
-            const [assignTitle, setAssignTitle] = useState('');
-            const [assignDeadline, setAssignDeadline] = useState('');
-            const [newTaskText, setNewTaskText] = useState('');
+            const [modalData, setModalData] = useState({ title: '', date: '', linkedGoalId: '' });
             const [linkingTaskId, setLinkingTaskId] = useState(null);
             const [expandedGoalId, setExpandedGoalId] = useState(null);
             const [confirmDelete, setConfirmDelete] = useState(null); 
@@ -124,14 +120,34 @@
                 return dateArray;
             }, [assignments, now]);
 
-            const handlePrimaryAction = () => {
-                if (activeTab === 'timeline') {
-                    setSelectedDate(todayStr);
-                    setShowTaskInput(true);
-                    setTimeout(() => taskInputRef.current?.focus(), 100);
-                } else if (activeTab === 'objectives') {
-                    setShowAddModal(true);
+            const openContextModal = () => {
+                setModalData({ title: '', date: todayStr, linkedGoalId: '' });
+                setShowAddModal(activeTab === 'timeline' ? 'task' : 'goal');
+            };
+
+            const handleModalSubmit = (e) => {
+                e.preventDefault();
+                if (!modalData.title || !modalData.date) return;
+
+                if (showAddModal === 'goal') {
+                    setAssignments([...assignments, { 
+                        id: Date.now(), 
+                        title: modalData.title, 
+                        deadline: modalData.date 
+                    }].sort((a, b) => new Date(a.deadline) - new Date(b.deadline)));
+                } else {
+                    const newTask = { 
+                        id: Date.now(), 
+                        text: modalData.title, 
+                        done: false, 
+                        linkedGoalId: modalData.linkedGoalId ? Number(modalData.linkedGoalId) : null 
+                    };
+                    setDailyTasks(prev => ({
+                        ...prev,
+                        [modalData.date]: [...(prev[modalData.date] || []), newTask]
+                    }));
                 }
+                setShowAddModal(false);
             };
 
             const getLinkedTasksForGoal = (goalId) => {
@@ -154,22 +170,6 @@
                 });
                 setDailyTasks(updatedDailyTasks);
                 setConfirmDelete(null);
-            };
-
-            const addAssignment = (e) => {
-                e.preventDefault();
-                if (!assignTitle || !assignDeadline) return;
-                setAssignments([...assignments, { id: Date.now(), title: assignTitle, deadline: assignDeadline }].sort((a, b) => new Date(a.deadline) - new Date(b.deadline)));
-                setAssignTitle(''); setAssignDeadline(''); setShowAddModal(false);
-            };
-
-            const addDailyTask = (e) => {
-                if (e.key === 'Enter' && newTaskText.trim()) {
-                    const newTask = { id: Date.now(), text: newTaskText.trim(), done: false, linkedGoalId: null };
-                    setDailyTasks(prev => ({ ...prev, [todayStr]: [...(prev[todayStr] || []), newTask] }));
-                    setNewTaskText('');
-                    setShowTaskInput(false);
-                }
             };
 
             const toggleTask = (date, taskId) => {
@@ -226,10 +226,9 @@
                             </div>
                         </div>
                         
-                        {/* Context-Aware Action Button */}
-                        {(activeTab === 'timeline' || activeTab === 'objectives') && (
+                        {activeTab !== 'settings' && (
                             <button 
-                                onClick={handlePrimaryAction}
+                                onClick={openContextModal}
                                 className="w-10 h-10 rounded-full border border-slate-200 dark:border-darkBorder flex items-center justify-center text-slate-400 hover:text-black dark:hover:text-white hover:border-black dark:hover:border-white transition-all active:scale-95"
                             >
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -237,36 +236,24 @@
                         )}
                     </div>
 
-                    {/* Floating Task Input for Timeline */}
-                    {showTaskInput && activeTab === 'timeline' && (
-                        <div className="mb-8 p-4 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-darkBorder fade-in">
-                            <input 
-                                ref={taskInputRef}
-                                placeholder="What needs to be done today?" 
-                                value={newTaskText}
-                                onChange={(e) => setNewTaskText(e.target.value)}
-                                onKeyDown={addDailyTask}
-                                onBlur={() => !newTaskText && setShowTaskInput(false)}
-                                className="w-full bg-transparent outline-none text-sm font-medium text-slate-800 dark:text-white"
-                            />
-                            <p className="text-[9px] text-slate-400 mt-2 uppercase font-bold tracking-tighter">Press Enter to save</p>
-                        </div>
-                    )}
-
                     {activeTab === 'settings' && (
                         <section className="fade-in">
                             <h2 className="text-[10px] font-bold text-slate-500 dark:text-darkMuted uppercase tracking-[0.2em] mb-6 border-b border-slate-100 dark:border-darkBorder pb-2">Settings</h2>
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between py-4 border-b border-slate-50 dark:border-darkBorder">
                                     <div>
-                                        <h3 className="text-sm font-semibold dark:text-white">Dark Mode</h3>
-                                        <p className="text-[11px] text-slate-400 dark:text-darkMuted">Adjust the interface appearance</p>
+                                        <h3 className="text-sm font-semibold dark:text-white">Interface Appearance</h3>
+                                        <p className="text-[11px] text-slate-400 dark:text-darkMuted">Currently in {isDark ? 'Dark' : 'Light'} Mode</p>
                                     </div>
                                     <button 
                                         onClick={() => setIsDark(!isDark)}
-                                        className={`w-12 h-6 rounded-full transition-colors relative ${isDark ? 'bg-white' : 'bg-black'}`}
+                                        className="w-12 h-12 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-darkBorder hover:scale-105 transition-transform"
                                     >
-                                        <div className={`absolute top-1 w-4 h-4 rounded-full transition-all ${isDark ? 'right-1 bg-black' : 'left-1 bg-white'}`}></div>
+                                        {isDark ? (
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                                        ) : (
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-500"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                                        )}
                                     </button>
                                 </div>
                             </div>
@@ -329,7 +316,6 @@
                                     const doneTasks = allTasks.filter(t => t.done);
                                     const isActive = selectedDate === date;
                                     const isRealToday = date === todayStr;
-                                    const isDateDropdownOpen = openDateDropdown === date;
                                     const isDoneOpen = !!openDoneDropdowns[date];
 
                                     return (
@@ -398,14 +384,14 @@
                         </section>
                     )}
 
-                    {/* Footer Navbar - Added Settings Button */}
+                    {/* Footer Navbar */}
                     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[150] w-[180px]">
                         <div className="nav-blur border border-slate-200/40 dark:border-white/10 rounded-full h-[60px] flex items-center justify-between px-2 popup-shadow">
                             <button onClick={() => setActiveTab('timeline')} className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'timeline' ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg' : 'text-slate-400 dark:text-darkMuted'}`}>
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line></svg>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                             </button>
                             <button onClick={() => setActiveTab('objectives')} className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'objectives' ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg' : 'text-slate-400 dark:text-darkMuted'}`}>
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                             </button>
                             <button onClick={() => setActiveTab('settings')} className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'settings' ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg' : 'text-slate-400 dark:text-darkMuted'}`}>
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
@@ -413,20 +399,37 @@
                         </div>
                     </div>
 
-                    {/* Modals */}
+                    {/* Unified Add Modal */}
                     {showAddModal && (
                         <div className="fixed inset-0 z-[200] modal-overlay flex items-center justify-center p-6" onClick={() => setShowAddModal(false)}>
                             <div className="w-full max-w-sm fade-in" onClick={e => e.stopPropagation()}>
-                                <h3 className="text-xl font-light mb-8 dark:text-white">New Objective</h3>
-                                <form onSubmit={addAssignment} className="space-y-8">
+                                <h3 className="text-xl font-light mb-8 dark:text-white">
+                                    {showAddModal === 'goal' ? 'New Objective' : 'New Task'}
+                                </h3>
+                                <form onSubmit={handleModalSubmit} className="space-y-6">
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-darkMuted">Title</label>
-                                        <input autoFocus value={assignTitle} onChange={e => setAssignTitle(e.target.value)} placeholder="Exam, Essay, Project..." className="w-full bg-transparent border-b border-slate-200 dark:border-darkBorder py-3 outline-none text-lg text-slate-800 dark:text-darkText focus:border-black dark:focus:border-white" />
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-darkMuted">Name</label>
+                                        <input autoFocus value={modalData.title} onChange={e => setModalData({...modalData, title: e.target.value})} placeholder="..." className="w-full bg-transparent border-b border-slate-200 dark:border-darkBorder py-3 outline-none text-lg text-slate-800 dark:text-darkText focus:border-black dark:focus:border-white" />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-darkMuted">Deadline</label>
-                                        <input type="date" value={assignDeadline} onChange={e => setAssignDeadline(e.target.value)} className="w-full bg-transparent border-b border-slate-200 dark:border-darkBorder py-3 outline-none text-lg text-slate-800 dark:text-darkText" />
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-darkMuted">Date</label>
+                                        <input type="date" value={modalData.date} onChange={e => setModalData({...modalData, date: e.target.value})} className="w-full bg-transparent border-b border-slate-200 dark:border-darkBorder py-3 outline-none text-lg text-slate-800 dark:text-darkText" />
                                     </div>
+                                    
+                                    {showAddModal === 'task' && assignments.length > 0 && (
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-darkMuted">Link to Objective</label>
+                                            <select 
+                                                value={modalData.linkedGoalId} 
+                                                onChange={e => setModalData({...modalData, linkedGoalId: e.target.value})}
+                                                className="w-full bg-transparent border-b border-slate-200 dark:border-darkBorder py-3 outline-none text-lg text-slate-800 dark:text-darkText"
+                                            >
+                                                <option value="">None</option>
+                                                {assignments.map(a => <option key={a.id} value={a.id}>{a.title}</option>)}
+                                            </select>
+                                        </div>
+                                    )}
+
                                     <div className="flex gap-4 pt-4">
                                         <button type="submit" className="flex-1 bg-black dark:bg-white text-white dark:text-black py-4 font-bold text-xs uppercase tracking-widest">Create</button>
                                         <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 border border-slate-200 dark:border-darkBorder py-4 font-bold text-xs uppercase tracking-widest dark:text-white">Cancel</button>
