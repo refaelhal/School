@@ -71,7 +71,29 @@
             };
 
             const [now, setNow] = useState(new Date());
-            const [activeTab, setActiveTab] = useState('timeline');
+            
+            // --- Navigation Logic for Swipe Back ---
+            const [activeTab, setActiveTabState] = useState('timeline');
+
+            const setActiveTab = (tab, pushHistory = true) => {
+                if (tab === activeTab) return;
+                setActiveTabState(tab);
+                if (pushHistory) {
+                    window.history.pushState({ tab }, '', '');
+                }
+            };
+
+            useEffect(() => {
+                window.history.replaceState({ tab: 'timeline' }, '', '');
+                const handlePopState = (event) => {
+                    if (event.state && event.state.tab) {
+                        setActiveTabState(event.state.tab);
+                    }
+                };
+                window.addEventListener('popstate', handlePopState);
+                return () => window.removeEventListener('popstate', handlePopState);
+            }, []);
+
             const [assignments, setAssignments] = useState(() => {
                 const saved = localStorage.getItem('school_assignments');
                 return saved ? JSON.parse(saved) : [];
@@ -88,7 +110,6 @@
             const [newTaskText, setNewTaskText] = useState('');
             const [linkingTaskId, setLinkingTaskId] = useState(null);
             const [expandedGoalId, setExpandedGoalId] = useState(null);
-            
             const [confirmDelete, setConfirmDelete] = useState(null); 
             const [deleteLinkedTasks, setDeleteLinkedTasks] = useState(false);
 
@@ -131,6 +152,18 @@
                 }
                 return dateArray;
             }, [assignments, now]);
+
+            const getLinkedTasksForGoal = (goalId) => {
+                const linked = [];
+                Object.keys(dailyTasks).forEach(date => {
+                    (dailyTasks[date] || []).forEach(task => {
+                        if (task.linkedGoalId === goalId) {
+                            linked.push({ ...task, date });
+                        }
+                    });
+                });
+                return linked;
+            };
 
             const deleteAssignment = (id, shouldDeleteTasks) => {
                 setAssignments(assignments.filter(a => a.id !== id));
@@ -219,18 +252,6 @@
                 return Math.round((completed / tasks.length) * 100);
             }, [dailyTasks, todayStr]);
 
-            const getLinkedTasksForGoal = (goalId) => {
-                const linked = [];
-                Object.keys(dailyTasks).forEach(date => {
-                    dailyTasks[date].forEach(task => {
-                        if (task.linkedGoalId === goalId) {
-                            linked.push({ ...task, date });
-                        }
-                    });
-                });
-                return linked;
-            };
-
             useEffect(() => {
                 const handleGlobalClick = () => setLinkingTaskId(null);
                 window.addEventListener('click', handleGlobalClick);
@@ -279,7 +300,10 @@
                                                     <div className="flex items-center gap-3">
                                                         <svg className={`text-slate-300 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-black' : ''}`} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"></polyline></svg>
                                                         <div className="flex flex-col">
-                                                            <span className={`text-sm font-semibold ${isExpanded ? 'text-black' : 'text-slate-900'}`}>{a.title}</span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`text-sm font-semibold ${isExpanded ? 'text-black' : 'text-slate-900'}`}>{a.title}</span>
+                                                                <span className="text-[9px] font-black bg-slate-100 text-slate-400 px-1.5 rounded-full">{linkedTasks.length}</span>
+                                                            </div>
                                                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">{getDaysRemaining(a.deadline)}</span>
                                                         </div>
                                                     </div>
@@ -324,7 +348,15 @@
                                         <div key={date} onClick={() => setSelectedDate(date)} className={`py-6 border-b border-slate-100 transition-all interactive-row ${!isActive && !isRealToday && tasks.length === 0 && dateAssigns.length === 0 ? 'opacity-40 grayscale' : 'opacity-100'} ${isActive ? 'bg-slate-50/30' : ''}`}>
                                             <div className="flex items-center gap-3 mb-4 px-2">
                                                 <span className={`text-[11px] font-bold uppercase tracking-wider ${isActive ? 'text-black underline underline-offset-4' : 'text-slate-600'}`}>{isRealToday ? 'Today' : formatDate(date)}</span>
-                                                {dateAssigns.map(a => (<span key={a.id} className="text-[9px] font-black text-white bg-black px-2 py-0.5 uppercase rounded-sm">{a.title}</span>))}
+                                                {dateAssigns.map(a => {
+                                                    const count = getLinkedTasksForGoal(a.id).length;
+                                                    return (
+                                                        <span key={a.id} className="text-[9px] font-black text-white bg-black px-2 py-0.5 uppercase rounded-sm flex items-center gap-1.5">
+                                                            {a.title}
+                                                            <span className="opacity-50 text-[8px] border-l border-white/30 pl-1.5">{count}</span>
+                                                        </span>
+                                                    );
+                                                })}
                                             </div>
                                             <div className="space-y-4 px-2">
                                                 {tasks.map(t => {
@@ -368,20 +400,14 @@
                         </section>
                     )}
 
-                    {/* Circular Navigation Bar */}
+                    {/* Navigation Bar */}
                     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[150] w-[130px]">
                         <div className="nav-blur border border-slate-200/40 rounded-full h-[60px] flex items-center justify-between px-2 popup-shadow">
-                            <button 
-                                onClick={() => setActiveTab('timeline')}
-                                className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'timeline' ? 'bg-black text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
-                            >
+                            <button onClick={() => setActiveTab('timeline')} className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'timeline' ? 'bg-black text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                             </button>
                             <div className="w-px h-4 bg-slate-200/40"></div>
-                            <button 
-                                onClick={() => setActiveTab('objectives')}
-                                className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'objectives' ? 'bg-black text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
-                            >
+                            <button onClick={() => setActiveTab('objectives')} className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'objectives' ? 'bg-black text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                             </button>
                         </div>
@@ -429,3 +455,4 @@
     </script>
 </body>
 </html>
+
