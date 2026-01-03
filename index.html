@@ -26,14 +26,30 @@
             display: none;
             -webkit-appearance: none;
         }
-        .fade-in { animation: fadeIn 0.3s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
-        .interactive-row {
-            -webkit-tap-highlight-color: transparent;
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .dropdown-enter {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
         }
         
-        * { -webkit-tap-highlight-color: transparent; }
+        .dropdown-active {
+            max-height: 800px;
+            opacity: 1;
+        }
+
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+        .popup-shadow {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        .interactive-row:active { background-color: #f8fafc; }
     </style>
 </head>
 <body class="text-slate-900 font-sans selection:bg-slate-100">
@@ -50,7 +66,6 @@
             };
 
             const [now, setNow] = useState(new Date());
-
             const [assignments, setAssignments] = useState(() => {
                 const saved = localStorage.getItem('school_assignments');
                 return saved ? JSON.parse(saved) : [];
@@ -65,6 +80,12 @@
             const [assignTitle, setAssignTitle] = useState('');
             const [assignDeadline, setAssignDeadline] = useState('');
             const [newTaskText, setNewTaskText] = useState('');
+            const [linkingTaskId, setLinkingTaskId] = useState(null);
+            const [expandedGoalId, setExpandedGoalId] = useState(null);
+            
+            // Confirmation States
+            const [confirmDelete, setConfirmDelete] = useState(null); 
+            const [deleteLinkedTasks, setDeleteLinkedTasks] = useState(false);
 
             useEffect(() => {
                 const interval = setInterval(() => {
@@ -89,19 +110,14 @@
             }, [dailyTasks]);
 
             const timelineDates = useMemo(() => {
-                // Always start strictly at today
                 const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 let endDate = new Date(start);
-
                 if (assignments.length > 0) {
-                    // Find the furthest deadline
                     const dates = assignments.map(a => new Date(a.deadline + 'T00:00:00'));
                     endDate = new Date(Math.max(...dates));
                 } else {
-                    // Default view if no assignments (3 days)
                     endDate.setDate(start.getDate() + 2);
                 }
-
                 const dateArray = [];
                 let currentDate = new Date(start);
                 while (currentDate <= endDate) {
@@ -110,6 +126,28 @@
                 }
                 return dateArray;
             }, [assignments, now]);
+
+            const deleteAssignment = (id, shouldDeleteTasks) => {
+                // 1. Remove the goal
+                setAssignments(assignments.filter(a => a.id !== id));
+                
+                // 2. Handle linked tasks
+                const updatedDailyTasks = { ...dailyTasks };
+                Object.keys(updatedDailyTasks).forEach(date => {
+                    if (shouldDeleteTasks) {
+                        // Delete the tasks entirely
+                        updatedDailyTasks[date] = updatedDailyTasks[date].filter(task => task.linkedGoalId !== id);
+                    } else {
+                        // Just unlink them
+                        updatedDailyTasks[date] = updatedDailyTasks[date].map(task => 
+                            task.linkedGoalId === id ? { ...task, linkedGoalId: null } : task
+                        );
+                    }
+                });
+                setDailyTasks(updatedDailyTasks);
+                setConfirmDelete(null);
+                setDeleteLinkedTasks(false);
+            };
 
             const addAssignment = (e) => {
                 e.preventDefault();
@@ -121,31 +159,40 @@
                 setShowAddModal(false);
             };
 
-            const addDailyTask = (date) => {
-                if (!newTaskText.trim()) return;
-                const dateTasks = dailyTasks[date] || [];
-                setDailyTasks({ ...dailyTasks, [date]: [...dateTasks, { id: Date.now(), text: newTaskText, done: false }] });
+            const addDailyTask = (date, customText = null) => {
+                const textToUse = customText !== null ? customText : newTaskText;
+                if (!textToUse.trim()) return;
+                const newTask = { id: Date.now(), text: textToUse.trim(), done: false, linkedGoalId: null };
+                setDailyTasks(prev => ({
+                    ...prev,
+                    [date]: [...(prev[date] || []), newTask]
+                }));
                 setNewTaskText('');
             };
 
             const toggleTask = (date, taskId, e) => {
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
+                if (e) { e.preventDefault(); e.stopPropagation(); }
                 setDailyTasks(prev => {
-                    const updated = (prev[date] || []).map(x => x.id === taskId ? {...x, done: !x.done} : x);
+                    const dayTasks = prev[date] || [];
+                    const updated = dayTasks.map(x => x.id === taskId ? {...x, done: !x.done} : x);
                     return {...prev, [date]: updated};
                 });
             };
 
-            const deleteTask = (date, taskId, e) => {
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
+            const deleteTask = (date, taskId) => {
                 const filtered = (dailyTasks[date] || []).filter(x => x.id !== taskId);
                 setDailyTasks({...dailyTasks, [date]: filtered});
+                setConfirmDelete(null);
+            };
+
+            const linkTaskToGoal = (date, taskId, goalId) => {
+                setDailyTasks(prev => {
+                    const updated = (prev[date] || []).map(x => 
+                        x.id === taskId ? {...x, linkedGoalId: goalId === x.linkedGoalId ? null : goalId} : x
+                    );
+                    return {...prev, [date]: updated};
+                });
+                setLinkingTaskId(null);
             };
 
             const getDaysRemaining = (deadline) => {
@@ -153,7 +200,6 @@
                 const target = new Date(deadline + 'T00:00:00');
                 const diff = target - today;
                 const days = Math.round(diff / (1000 * 60 * 60 * 24));
-                
                 if (days < 0) return "Past due";
                 if (days === 0) return "Due Today";
                 if (days === 1) return "Due Tomorrow";
@@ -172,6 +218,24 @@
                 const completed = tasks.filter(t => t.done).length;
                 return Math.round((completed / tasks.length) * 100);
             }, [dailyTasks, todayStr]);
+
+            const getLinkedTasksForGoal = (goalId) => {
+                const linked = [];
+                Object.keys(dailyTasks).forEach(date => {
+                    dailyTasks[date].forEach(task => {
+                        if (task.linkedGoalId === goalId) {
+                            linked.push({ ...task, date });
+                        }
+                    });
+                });
+                return linked;
+            };
+
+            useEffect(() => {
+                const handleGlobalClick = () => setLinkingTaskId(null);
+                window.addEventListener('click', handleGlobalClick);
+                return () => window.removeEventListener('click', handleGlobalClick);
+            }, []);
 
             return (
                 <div className="max-w-xl mx-auto px-6 pt-16 pb-32 w-full relative fade-in">
@@ -202,17 +266,67 @@
                             <p className="text-xs text-slate-400 italic font-medium">No active deadlines.</p>
                         ) : (
                             <div className="space-y-4">
-                                {assignments.map(a => (
-                                    <div key={a.id} className="flex justify-between items-center group">
-                                        <div className="flex flex-col">
-                                            <span className="text-sm font-semibold text-slate-900">{a.title}</span>
-                                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">{getDaysRemaining(a.deadline)}</span>
+                                {assignments.map(a => {
+                                    const linkedTasks = getLinkedTasksForGoal(a.id);
+                                    const isExpanded = expandedGoalId === a.id;
+                                    
+                                    return (
+                                        <div key={a.id} className="border-b border-slate-50 pb-2 last:border-0">
+                                            <div 
+                                                onClick={() => setExpandedGoalId(isExpanded ? null : a.id)}
+                                                className="flex justify-between items-center group cursor-pointer py-2"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <svg 
+                                                        className={`text-slate-300 transition-transform duration-300 ease-in-out ${isExpanded ? 'rotate-90 text-black' : ''}`} 
+                                                        width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                                                    >
+                                                        <polyline points="9 18 15 12 9 6"></polyline>
+                                                    </svg>
+                                                    <div className="flex flex-col">
+                                                        <span className={`text-sm font-semibold transition-colors duration-300 ${isExpanded ? 'text-black' : 'text-slate-900 group-hover:text-black'}`}>
+                                                            {a.title}
+                                                        </span>
+                                                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">{getDaysRemaining(a.deadline)}</span>
+                                                    </div>
+                                                </div>
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); setConfirmDelete({ type: 'goal', id: a.id }); }} 
+                                                    className="text-slate-200 hover:text-red-500 transition-colors px-2 py-1"
+                                                >
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                                </button>
+                                            </div>
+
+                                            <div className={`dropdown-enter ${isExpanded ? 'dropdown-active' : ''}`}>
+                                                <div className="mt-2 mb-4 ml-6 space-y-3 border-l-2 border-slate-50 pl-4">
+                                                    {linkedTasks.length === 0 ? (
+                                                        <p className="text-[10px] text-slate-300 italic py-2">No tasks linked to this goal yet.</p>
+                                                    ) : (
+                                                        linkedTasks.map(t => (
+                                                            <div key={t.id} className="flex items-center justify-between group/linkitem py-1">
+                                                                <div className="flex flex-col">
+                                                                    <span className={`text-xs ${t.done ? 'text-slate-300 line-through' : 'text-slate-600 font-medium'}`}>
+                                                                        {t.text}
+                                                                    </span>
+                                                                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tight">
+                                                                        {formatDate(t.date)}
+                                                                    </span>
+                                                                </div>
+                                                                <button 
+                                                                    onClick={() => linkTaskToGoal(t.date, t.id, null)}
+                                                                    className="opacity-0 group-hover/linkitem:opacity-100 text-[8px] font-bold uppercase tracking-widest text-red-400 hover:text-red-600 transition-all"
+                                                                >
+                                                                    Unlink
+                                                                </button>
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
-                                        <button onClick={() => setAssignments(assignments.filter(x => x.id !== a.id))} className="text-slate-300 hover:text-black transition-colors px-2 py-1">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                        </button>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </section>
@@ -231,10 +345,10 @@
                                     <div 
                                         key={date} 
                                         onClick={() => setSelectedDate(date)} 
-                                        className={`py-6 border-b border-slate-100 transition-all cursor-default interactive-row ${!isActive && !isRealToday && tasks.length === 0 && dateAssigns.length === 0 ? 'opacity-40 grayscale' : 'opacity-100'}`}
+                                        className={`py-6 border-b border-slate-100 transition-all duration-300 cursor-default interactive-row ${!isActive && !isRealToday && tasks.length === 0 && dateAssigns.length === 0 ? 'opacity-40 grayscale' : 'opacity-100'} ${isActive ? 'bg-slate-50/30' : ''}`}
                                     >
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <span className={`text-[11px] font-bold uppercase tracking-wider ${isActive ? 'text-black underline underline-offset-4' : 'text-slate-600'}`}>
+                                        <div className="flex items-center gap-3 mb-4 px-2">
+                                            <span className={`text-[11px] font-bold uppercase tracking-wider transition-all duration-300 ${isActive ? 'text-black underline underline-offset-4' : 'text-slate-600'}`}>
                                                 {isRealToday ? 'Today' : formatDate(date)}
                                             </span>
                                             {dateAssigns.map(a => (
@@ -244,42 +358,92 @@
                                             ))}
                                         </div>
                                         
-                                        <div className="space-y-3">
-                                            {tasks.map(t => (
-                                                <div key={t.id} className="flex items-center gap-4 group/task relative">
-                                                    <div 
-                                                        onClick={(e) => toggleTask(date, t.id, e)} 
-                                                        className={`w-6 h-6 flex-shrink-0 flex items-center justify-center border-2 transition-all cursor-pointer ${t.done ? 'bg-black border-black' : 'border-slate-300'}`}
-                                                    >
-                                                        {t.done && (
-                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                                        )}
+                                        <div className="space-y-4 px-2">
+                                            {tasks.map(t => {
+                                                const linkedGoal = assignments.find(a => a.id === t.linkedGoalId);
+                                                return (
+                                                    <div key={t.id} className="flex flex-col gap-1 group/task relative">
+                                                        <div className="flex items-center gap-4">
+                                                            <div 
+                                                                onClick={(e) => toggleTask(date, t.id, e)} 
+                                                                className={`w-6 h-6 flex-shrink-0 flex items-center justify-center border-2 transition-all cursor-pointer ${t.done ? 'bg-black border-black' : 'border-slate-300'}`}
+                                                            >
+                                                                {t.done && (
+                                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1 flex flex-row items-baseline gap-2 min-w-0 overflow-hidden" onClick={(e) => toggleTask(date, t.id, e)}>
+                                                                <span className={`text-sm cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis transition-all ${t.done ? 'text-slate-300 line-through' : 'text-slate-800 font-medium'}`}>
+                                                                    {t.text}
+                                                                </span>
+                                                                {linkedGoal && (
+                                                                    <span className={`flex-shrink-0 text-[8px] font-bold uppercase tracking-[0.05em] px-1.5 py-0.5 rounded leading-none transition-all border ${t.done ? 'text-slate-200 border-slate-50 line-through' : 'text-slate-400 border-slate-100 group-hover/task:border-slate-200'}`}>
+                                                                        {linkedGoal.title}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            
+                                                            <div className="flex items-center gap-1 relative">
+                                                                <button 
+                                                                    onClick={(e) => { 
+                                                                        e.stopPropagation(); 
+                                                                        if (t.linkedGoalId) {
+                                                                            linkTaskToGoal(date, t.id, null);
+                                                                        } else {
+                                                                            setLinkingTaskId(linkingTaskId === t.id ? null : t.id);
+                                                                        }
+                                                                    }}
+                                                                    className={`text-[9px] font-bold uppercase tracking-widest px-2 py-1 transition-colors ${t.linkedGoalId ? 'text-red-400 hover:text-red-600' : (linkingTaskId === t.id ? 'text-black underline' : 'text-slate-200 hover:text-black')}`}
+                                                                >
+                                                                    {t.linkedGoalId ? 'Unlink' : 'Link'}
+                                                                </button>
+                                                                <button 
+                                                                    onClick={(e) => { e.stopPropagation(); setConfirmDelete({ type: 'task', id: t.id, date }); }} 
+                                                                    className="text-slate-200 hover:text-black p-2 transition-colors"
+                                                                >
+                                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                                                </button>
+
+                                                                {linkingTaskId === t.id && (
+                                                                    <div 
+                                                                        className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-100 popup-shadow z-50 rounded-lg overflow-hidden fade-in"
+                                                                        onClick={e => e.stopPropagation()}
+                                                                    >
+                                                                        <div className="p-3 border-b border-slate-50 bg-slate-50/50">
+                                                                            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Select Goal</span>
+                                                                        </div>
+                                                                        <div className="max-h-40 overflow-y-auto custom-scroll">
+                                                                            {assignments.map(goal => (
+                                                                                <button 
+                                                                                    key={goal.id}
+                                                                                    onClick={() => linkTaskToGoal(date, t.id, goal.id)}
+                                                                                    className="w-full text-left px-4 py-3 text-[11px] font-medium text-slate-700 hover:bg-slate-50 border-b border-slate-50 last:border-0 transition-colors flex items-center justify-between group"
+                                                                                >
+                                                                                    <span className="truncate pr-2">{goal.title}</span>
+                                                                                    <svg className="opacity-0 group-hover:opacity-100 transition-opacity" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                                                                </button>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <span 
-                                                        onClick={(e) => toggleTask(date, t.id, e)}
-                                                        className={`text-sm flex-1 cursor-pointer py-1 ${t.done ? 'text-slate-300 line-through' : 'text-slate-800 font-medium'}`}
-                                                    >
-                                                        {t.text}
-                                                    </span>
-                                                    <button 
-                                                        onClick={(e) => deleteTask(date, t.id, e)} 
-                                                        className="text-slate-300 hover:text-black p-2 -mr-2 transition-colors"
-                                                    >
-                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                                    </button>
-                                                </div>
-                                            ))}
-                                            {isActive && (
-                                                <div className="pl-10" onClick={e => e.stopPropagation()}>
+                                                );
+                                            })}
+                                            
+                                            <div className={`dropdown-enter ${isActive ? 'dropdown-active' : ''}`}>
+                                                <div className="pl-10 py-2" onClick={e => e.stopPropagation()}>
                                                     <input 
                                                         placeholder="Add task..."
                                                         value={newTaskText}
                                                         onChange={(e) => setNewTaskText(e.target.value)}
                                                         onKeyDown={(e) => e.key === 'Enter' && addDailyTask(date)}
+                                                        onBlur={() => { if(newTaskText.trim()) addDailyTask(date); }}
                                                         className="w-full bg-transparent border-none outline-none text-sm py-1 placeholder:text-slate-300 text-slate-700 appearance-none font-medium"
                                                     />
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
                                     </div>
                                 );
@@ -287,22 +451,23 @@
                         </div>
                     </section>
 
-                    {/* Modal */}
+                    {/* Add Goal Modal */}
                     {showAddModal && (
                         <div className="fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-6" onClick={() => setShowAddModal(false)}>
                             <div className="bg-white w-full max-w-xs p-10 border border-slate-200 shadow-2xl fade-in" onClick={e => e.stopPropagation()}>
                                 <div className="flex justify-between items-center mb-10">
-                                    <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-600">New Entry</h2>
+                                    <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-600">New Goal</h2>
                                     <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-black transition-colors px-2 py-1">✕</button>
                                 </div>
                                 <form onSubmit={addAssignment} className="space-y-10">
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Assignment</label>
+                                        <label className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Objective Name</label>
                                         <input 
+                                            autoFocus
                                             type="text" 
                                             value={assignTitle}
                                             onChange={(e) => setAssignTitle(e.target.value)}
-                                            placeholder="Subject / Project"
+                                            placeholder="e.g., Final Exam"
                                             className="w-full border-b border-slate-200 py-2 text-sm outline-none focus:border-black transition-colors placeholder:text-slate-200 font-medium"
                                         />
                                     </div>
@@ -322,6 +487,47 @@
                             </div>
                         </div>
                     )}
+
+                    {/* Custom Confirmation Modal */}
+                    {confirmDelete && (
+                        <div className="fixed inset-0 z-[200] modal-overlay flex items-center justify-center p-6" onClick={() => { setConfirmDelete(null); setDeleteLinkedTasks(false); }}>
+                            <div className="bg-white w-full max-w-xs p-8 border border-slate-200 shadow-2xl fade-in" onClick={e => e.stopPropagation()}>
+                                <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-red-500 mb-6">Confirm Deletion</h2>
+                                <p className="text-sm text-slate-600 mb-6 font-medium leading-relaxed">
+                                    {confirmDelete.type === 'goal' 
+                                        ? "Are you sure you want to remove this goal?" 
+                                        : "Are you sure you want to remove this task from your timeline?"}
+                                </p>
+                                
+                                {confirmDelete.type === 'goal' && (
+                                    <div 
+                                        className="mb-8 flex items-center gap-3 cursor-pointer group select-none"
+                                        onClick={() => setDeleteLinkedTasks(!deleteLinkedTasks)}
+                                    >
+                                        <div className={`w-4 h-4 border flex items-center justify-center transition-colors ${deleteLinkedTasks ? 'bg-black border-black' : 'border-slate-300 group-hover:border-slate-400'}`}>
+                                            {deleteLinkedTasks && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                                        </div>
+                                        <span className="text-[11px] font-medium text-slate-500 group-hover:text-slate-700 transition-colors">Also delete all linked tasks</span>
+                                    </div>
+                                )}
+
+                                <div className="flex flex-col gap-3">
+                                    <button 
+                                        onClick={() => confirmDelete.type === 'goal' ? deleteAssignment(confirmDelete.id, deleteLinkedTasks) : deleteTask(confirmDelete.date, confirmDelete.id)}
+                                        className="w-full py-3 bg-red-500 text-white text-[10px] font-bold uppercase tracking-[0.3em] hover:bg-red-600 transition-colors"
+                                    >
+                                        Delete Forever
+                                    </button>
+                                    <button 
+                                        onClick={() => { setConfirmDelete(null); setDeleteLinkedTasks(false); }}
+                                        className="w-full py-3 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-[0.3em] hover:bg-slate-200 transition-colors"
+                                    >
+                                        Keep It
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
@@ -331,4 +537,3 @@
     </script>
 </body>
 </html>
-
