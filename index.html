@@ -76,7 +76,6 @@
         .custom-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         .dark .custom-scroll::-webkit-scrollbar-thumb { background: #404040; }
 
-        /* Minimal Button Design Kept Exactly the Same */
         .btn-minimal-trigger {
             appearance: none;
             -webkit-appearance: none;
@@ -105,7 +104,6 @@
             right: 4px;
             top: 50%;
             transform: translateY(-50%);
-            transition: transform 0.3s ease;
         }
     </style>
 </head>
@@ -129,8 +127,6 @@
             });
             const [activeTab, setActiveTab] = useState('timeline');
             const [openDoneDropdowns, setOpenDoneDropdowns] = useState({});
-            
-            // State for the new Objective Pop-up Menu
             const [objectivePopup, setObjectivePopup] = useState(null); 
 
             const [assignments, setAssignments] = useState(() => {
@@ -531,18 +527,26 @@
                     {/* Objective Pop-up Menu */}
                     {objectivePopup && (
                         <div className="fixed inset-0 z-[300] bg-white/40 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setObjectivePopup(null)}>
-                            <div className="w-full max-w-[280px] bg-white dark:bg-[#1a1a1a] shadow-2xl rounded-2xl p-4 border border-slate-100 dark:border-darkBorder fade-in" onClick={e => e.stopPropagation()}>
-                                <div className="flex justify-between items-center mb-4 border-b border-slate-50 dark:border-darkBorder pb-2">
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-darkMuted">Objectives — {formatDate(objectivePopup.date)}</h4>
-                                    <button onClick={() => setObjectivePopup(null)} className="text-slate-300 hover:text-black dark:hover:text-white"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                            <div className="w-full max-w-sm bg-black dark:bg-[#1a1a1a] shadow-2xl rounded-[32px] p-6 border border-white/5 fade-in" onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-6">
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-white/40">Objectives — {formatDate(objectivePopup.date)}</h4>
+                                    <button onClick={() => setObjectivePopup(null)} className="text-white/30 hover:text-white"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
                                 </div>
-                                <div className="flex flex-wrap gap-2">
-                                    {objectivePopup.items.map(a => (
-                                        <span key={a.id} className="text-[10px] font-bold text-white dark:text-black bg-black dark:bg-white px-2 py-1 uppercase tracking-wider rounded">
-                                            {a.title}
-                                        </span>
-                                    ))}
+                                
+                                <div className="space-y-1">
+                                    <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Active Objectives</label>
+                                    <select 
+                                        className="island-input cursor-default pointer-events-none"
+                                        defaultValue=""
+                                    >
+                                        <option value="" disabled className="text-black">Objectives for this date:</option>
+                                        {objectivePopup.items.map(a => <option key={a.id} value={a.id} className="text-black">{a.title}</option>)}
+                                    </select>
                                 </div>
+                                
+                                <button onClick={() => setObjectivePopup(null)} className="mt-8 w-full bg-white text-black py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] active:scale-95 transition-transform">
+                                    Close
+                                </button>
                             </div>
                         </div>
                     )}
