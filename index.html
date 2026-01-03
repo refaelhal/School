@@ -72,15 +72,14 @@
         .nav-blur { backdrop-filter: blur(12px); background-color: rgba(255, 255, 255, 0.75); }
         .dark .nav-blur { background-color: rgba(20, 20, 20, 0.75); border-color: rgba(255, 255, 255, 0.1); }
         
-        /* Native-like Dropdown Style */
-        .native-select-trigger {
+        /* Native-style objective dropdown icon */
+        .obj-select {
             appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
             background-repeat: no-repeat;
-            background-position: right 0.5rem center;
-            background-size: 1em;
-            padding-right: 2rem;
+            background-position: right 0.4rem center;
+            background-size: 0.8em;
+            padding-right: 1.5rem;
         }
     </style>
 </head>
@@ -382,27 +381,27 @@
                                         return (
                                             <div key={a.id} className="border-b border-slate-50 dark:border-darkBorder pb-2 last:border-0">
                                                 <div onClick={() => setExpandedGoalId(isExpanded ? null : a.id)} className="flex justify-between items-center group cursor-pointer py-2">
-                                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                    <div className="flex items-center gap-3 min-w-0">
                                                         <svg className={`flex-shrink-0 text-slate-300 dark:text-darkMuted transition-transform duration-300 ${isExpanded ? 'rotate-90 text-black dark:text-white' : ''}`} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"></polyline></svg>
                                                         <div className="flex flex-col min-w-0">
                                                             <div className="flex items-center gap-2 min-w-0">
-                                                                <span className={`text-sm font-semibold truncate ${isExpanded ? 'text-black dark:text-white' : 'text-slate-900 dark:text-darkText'}`}>{a.title}</span>
+                                                                <span className={`text-sm font-semibold truncate max-w-[200px] ${isExpanded ? 'text-black dark:text-white' : 'text-slate-900 dark:text-darkText'}`}>{a.title}</span>
                                                                 <span className="flex-shrink-0 text-[9px] font-black bg-slate-100 dark:bg-darkBorder text-slate-400 dark:text-darkMuted px-1.5 rounded-full">{doneCount}/{linkedTasks.length}</span>
                                                             </div>
                                                             <span className="text-[10px] text-slate-500 dark:text-darkMuted font-bold uppercase tracking-tighter">{getDaysRemaining(a.deadline)}</span>
                                                         </div>
                                                     </div>
-                                                    <button onClick={(e) => { e.stopPropagation(); setConfirmDelete({ type: 'objective', id: a.id }); }} className="flex-shrink-0 text-slate-300 dark:text-darkMuted hover:text-red-500 p-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                                                    <button onClick={(e) => { e.stopPropagation(); setConfirmDelete({ type: 'objective', id: a.id }); }} className="text-slate-300 dark:text-darkMuted hover:text-red-500 p-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
                                                 </div>
                                                 <div className={`dropdown-enter ${isExpanded ? 'dropdown-active' : ''}`}>
                                                     <div className="mt-2 mb-4 ml-6 space-y-3 border-l-2 border-slate-50 dark:border-darkBorder pl-4">
                                                         {linkedTasks.length === 0 ? <p className="text-[10px] text-slate-300 dark:text-darkMuted italic py-2">No linked tasks.</p> : linkedTasks.map(t => (
                                                             <div key={t.id} className="flex items-center justify-between group/linkitem py-1">
                                                                 <div className="flex flex-col min-w-0">
-                                                                    <span className={`text-xs truncate ${t.done ? 'text-slate-300 dark:text-darkMuted line-through' : 'text-slate-600 dark:text-slate-300 font-medium'}`}>{t.text}</span>
+                                                                    <span className={`text-xs truncate max-w-[220px] ${t.done ? 'text-slate-300 dark:text-darkMuted line-through' : 'text-slate-600 dark:text-slate-300 font-medium'}`}>{t.text}</span>
                                                                     <span className="text-[8px] font-bold text-slate-400 dark:text-darkMuted uppercase tracking-tight">{formatDate(t.date)}</span>
                                                                 </div>
-                                                                <button onClick={() => linkTaskToGoal(t.date, t.id, null)} className="opacity-0 group-hover/linkitem:opacity-100 text-[10px] font-black text-red-500 uppercase tracking-tighter ml-2">Unlink</button>
+                                                                <button onClick={() => linkTaskToGoal(t.date, t.id, null)} className="opacity-0 group-hover/linkitem:opacity-100 text-[10px] font-black text-red-500 uppercase tracking-tighter ml-4 flex-shrink-0">Unlink</button>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -428,53 +427,33 @@
                                     const isRealToday = date === todayStr;
                                     const isDoneOpen = !!openDoneDropdowns[date];
 
-                                    // Logic for native-style dropdown:
-                                    // If more than 2 objectives, or if there is 1 objective longer than 20 chars
-                                    const hasLongObjective = dateAssigns.some(a => a.title.length > 20);
-                                    const useNativeDropdown = dateAssigns.length > 2 || (dateAssigns.length >= 2 && hasLongObjective);
-
                                     return (
                                         <div key={date} onClick={() => setSelectedDate(date)} className={`py-6 border-b border-slate-100 dark:border-darkBorder transition-all ${!isActive && !isRealToday && allTasks.length === 0 && dateAssigns.length === 0 ? 'opacity-40 grayscale' : ''}`}>
                                             <div className="flex flex-col gap-2 mb-4 px-2">
                                                 <div className="flex items-start gap-4">
-                                                    {/* Date Label - Forced width to prevent being pushed */}
-                                                    <div className="w-16 flex-shrink-0 pt-1">
-                                                        <span className={`text-[11px] font-bold uppercase tracking-wider block break-words leading-tight ${isActive ? 'text-black dark:text-white underline underline-offset-4' : 'text-slate-600 dark:text-darkMuted'}`}>
-                                                            {isRealToday ? 'Today' : formatDate(date)}
-                                                        </span>
-                                                    </div>
-
-                                                    {/* Objectives Container */}
+                                                    <span className={`text-[11px] font-bold uppercase tracking-wider whitespace-nowrap mt-1 flex-shrink-0 ${isActive ? 'text-black dark:text-white underline underline-offset-4' : 'text-slate-600 dark:text-darkMuted'}`}>{isRealToday ? 'Today' : formatDate(date)}</span>
+                                                    
+                                                    {/* Unified Objective Dropdown for Timeline */}
                                                     <div className="flex-1 min-w-0">
                                                         {dateAssigns.length > 0 && (
-                                                            useNativeDropdown ? (
-                                                                /* Native-Style Select Dropdown */
-                                                                <div className="relative">
-                                                                    <select 
-                                                                        disabled
-                                                                        className="native-select-trigger w-full bg-slate-50 dark:bg-darkBorder border border-slate-200 dark:border-white/5 text-[10px] font-black uppercase tracking-tighter px-3 py-2 rounded-lg text-slate-500 dark:text-darkMuted pointer-events-none"
-                                                                    >
-                                                                        <option>{dateAssigns.length} Objectives</option>
-                                                                    </select>
-                                                                    {/* Custom overlay to allow clicking and seeing them in Objective tab instead or just showing list */}
-                                                                    <div className="mt-2 space-y-1">
-                                                                        {dateAssigns.map(a => (
-                                                                            <div key={a.id} className="text-[9px] font-black text-white dark:text-black bg-black dark:bg-white px-2 py-1 uppercase rounded-sm truncate w-full">
-                                                                                {a.title}
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                /* Standard labels for few/short objectives */
-                                                                <div className="flex flex-col gap-1.5">
+                                                            <div className="relative inline-block w-full max-w-[140px]">
+                                                                <select 
+                                                                    className="obj-select w-full bg-black dark:bg-white text-white dark:text-black text-[9px] font-black uppercase tracking-tighter px-2 py-1.5 rounded-sm outline-none cursor-pointer"
+                                                                    onChange={(e) => {
+                                                                        const id = e.target.value;
+                                                                        if(id) {
+                                                                            navigateTo('objectives');
+                                                                            setExpandedGoalId(Number(id));
+                                                                        }
+                                                                    }}
+                                                                    defaultValue=""
+                                                                >
+                                                                    <option value="" disabled>{dateAssigns.length} Objective{dateAssigns.length > 1 ? 's' : ''}</option>
                                                                     {dateAssigns.map(a => (
-                                                                        <span key={a.id} className="text-[9px] font-black text-white dark:text-black bg-black dark:bg-white px-2 py-1 uppercase rounded-sm truncate w-full block">
-                                                                            {a.title}
-                                                                        </span>
+                                                                        <option key={a.id} value={a.id}>{a.title}</option>
                                                                     ))}
-                                                                </div>
-                                                            )
+                                                                </select>
+                                                            </div>
                                                         )}
                                                     </div>
                                                 </div>
