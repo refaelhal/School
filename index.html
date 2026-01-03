@@ -429,34 +429,33 @@
                                     const isDoneOpen = !!openDoneDropdowns[date];
                                     const isObjectivesOpen = !!openObjectiveDropdowns[date];
 
-                                    // Dropdown Logic for overflow objectives
-                                    const visibleAssigns = isObjectivesOpen ? dateAssigns : dateAssigns.slice(0, 2);
-                                    const hiddenCount = dateAssigns.length - 2;
-
                                     return (
                                         <div key={date} onClick={() => setSelectedDate(date)} className={`py-6 border-b border-slate-100 dark:border-darkBorder transition-all ${!isActive && !isRealToday && allTasks.length === 0 && dateAssigns.length === 0 ? 'opacity-40 grayscale' : ''}`}>
                                             <div className="flex flex-col gap-2 mb-4 px-2">
-                                                <div className="flex items-start gap-3">
+                                                <div className="flex items-start gap-4">
                                                     <span className={`text-[11px] font-bold uppercase tracking-wider whitespace-nowrap mt-1 ${isActive ? 'text-black dark:text-white underline underline-offset-4' : 'text-slate-600 dark:text-darkMuted'}`}>{isRealToday ? 'Today' : formatDate(date)}</span>
-                                                    <div className="flex flex-wrap gap-1.5 overflow-hidden">
-                                                        {visibleAssigns.map(a => (<span key={a.id} className="text-[9px] font-black text-white dark:text-black bg-black dark:bg-white px-2 py-0.5 uppercase rounded-sm truncate max-w-[120px]">{a.title}</span>))}
-                                                        {hiddenCount > 0 && !isObjectivesOpen && (
+                                                    
+                                                    {dateAssigns.length > 0 && (
+                                                        <div className="flex flex-col flex-1 min-w-0">
                                                             <button 
-                                                                onClick={(e) => { e.stopPropagation(); toggleObjectiveDropdown(date); }} 
-                                                                className="text-[9px] font-bold bg-slate-100 dark:bg-darkBorder text-slate-500 px-2 py-0.5 rounded-sm hover:bg-slate-200 dark:hover:bg-darkBorder/80 transition-colors"
+                                                                onClick={(e) => { e.stopPropagation(); toggleObjectiveDropdown(date); }}
+                                                                className="flex items-center gap-2 text-[10px] font-bold text-slate-400 dark:text-darkMuted uppercase tracking-widest hover:text-slate-600 transition-colors"
                                                             >
-                                                                +{hiddenCount} more
+                                                                <svg className={`transition-transform duration-200 ${isObjectivesOpen ? 'rotate-90' : ''}`} width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                                                Objectives ({dateAssigns.length})
                                                             </button>
-                                                        )}
-                                                        {isObjectivesOpen && dateAssigns.length > 2 && (
-                                                            <button 
-                                                                onClick={(e) => { e.stopPropagation(); toggleObjectiveDropdown(date); }} 
-                                                                className="text-[9px] font-bold text-slate-400 dark:text-darkMuted uppercase px-1"
-                                                            >
-                                                                Show less
-                                                            </button>
-                                                        )}
-                                                    </div>
+                                                            
+                                                            <div className={`dropdown-enter ${isObjectivesOpen ? 'dropdown-active' : ''}`}>
+                                                                <div className="flex flex-col gap-1.5 mt-2">
+                                                                    {dateAssigns.map(a => (
+                                                                        <span key={a.id} className="text-[9px] font-black text-white dark:text-black bg-black dark:bg-white px-2 py-1 uppercase rounded-sm truncate w-fit max-w-[200px]">
+                                                                            {a.title}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -491,7 +490,7 @@
                                                                 <div onClick={() => toggleTask(date, t.id)} className={`w-6 h-6 flex-shrink-0 flex items-center justify-center border-2 border-slate-300 dark:border-darkBorder`}></div>
                                                                 <div className="flex-1 flex flex-row items-baseline gap-2 min-w-0" onClick={() => toggleTask(date, t.id)}>
                                                                     <span className="text-sm truncate text-slate-800 dark:text-darkText font-medium">{t.text}</span>
-                                                                    {linkedGoal && <span className="flex-shrink-0 text-[8px] font-bold uppercase tracking-[0.05em] px-1.5 py-0.5 rounded border text-slate-400 border-slate-100 dark:text-darkMuted dark:border-darkBorder">{linkedGoal.title}</span>}
+                                                                    {linkedGoal && <span className="flex-shrink-0 text-[8px] font-bold uppercase tracking-[0.05em] px-1.5 py-0.5 rounded border text-slate-400 border-slate-100 dark:text-darkMuted dark:border-darkBorder truncate max-w-[100px]">{linkedGoal.title}</span>}
                                                                 </div>
                                                                 <div className="flex items-center gap-1">
                                                                     <button onClick={(e) => { e.stopPropagation(); if (t.linkedGoalId) linkTaskToGoal(date, t.id, null); else handleOpenIsland('link_existing', { ...t, date }); }} className={`text-[10px] font-black uppercase tracking-tighter px-2 py-1 transition-colors ${t.linkedGoalId ? 'text-red-500' : 'text-slate-300 dark:text-darkMuted hover:text-black dark:hover:text-white'}`}>{t.linkedGoalId ? 'Unlink' : 'Link'}</button>
@@ -527,7 +526,7 @@
                     {/* Delete Confirm Modal */}
                     {confirmDelete && (
                         <div className="fixed inset-0 z-[300] bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setConfirmDelete(null)}>
-                            <div className="w-full max-sm bg-white dark:bg-darkCard p-8 border border-slate-100 dark:border-darkBorder shadow-2xl rounded-2xl" onClick={e => e.stopPropagation()}>
+                            <div className="w-full max-w-sm fade-in bg-white dark:bg-darkCard p-8 border border-slate-100 dark:border-darkBorder shadow-2xl rounded-2xl" onClick={e => e.stopPropagation()}>
                                 <h3 className="text-lg font-light mb-2 dark:text-white">Confirm Delete</h3>
                                 <p className="text-sm text-slate-500 dark:text-darkMuted mb-4">Remove this {confirmDelete.type}?</p>
                                 
