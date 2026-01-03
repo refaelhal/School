@@ -427,47 +427,51 @@
                                     const isDoneOpen = !!openDoneDropdowns[date];
                                     const isObjectivesOpen = !!openObjectiveDropdowns[date];
 
-                                    // Limits for objective display
-                                    const visibleAssigns = isObjectivesOpen ? dateAssigns : dateAssigns.slice(0, 2);
-                                    const hiddenCount = dateAssigns.length - 2;
+                                    // Determine if we show labels or the dropdown button
+                                    const tooManyObjectives = dateAssigns.length > 2;
 
                                     return (
                                         <div key={date} onClick={() => setSelectedDate(date)} className={`py-6 border-b border-slate-100 dark:border-darkBorder transition-all ${!isActive && !isRealToday && allTasks.length === 0 && dateAssigns.length === 0 ? 'opacity-40 grayscale' : ''}`}>
                                             <div className="flex flex-col gap-2 mb-4 px-2">
-                                                {/* Date and Objective Container */}
                                                 <div className="flex items-start gap-4">
-                                                    {/* Date Column - constrained width to force wrap/cutoff if needed */}
+                                                    {/* Date Label */}
                                                     <div className="w-16 flex-shrink-0 pt-1">
                                                         <span className={`text-[11px] font-bold uppercase tracking-wider block break-words leading-tight ${isActive ? 'text-black dark:text-white underline underline-offset-4' : 'text-slate-600 dark:text-darkMuted'}`}>
                                                             {isRealToday ? 'Today' : formatDate(date)}
                                                         </span>
                                                     </div>
 
-                                                    {/* Objectives Column - flex-col ensures they stack if too many */}
-                                                    <div className="flex flex-col flex-1 gap-1.5">
-                                                        <div className="flex flex-wrap gap-1.5">
-                                                            {visibleAssigns.map(a => (
-                                                                <span key={a.id} className="text-[9px] font-black text-white dark:text-black bg-black dark:bg-white px-2 py-0.5 uppercase rounded-sm truncate max-w-[140px]">
-                                                                    {a.title}
-                                                                </span>
-                                                            ))}
-                                                            {hiddenCount > 0 && !isObjectivesOpen && (
-                                                                <button 
-                                                                    onClick={(e) => { e.stopPropagation(); toggleObjectiveDropdown(date); }} 
-                                                                    className="text-[9px] font-bold bg-slate-100 dark:bg-darkBorder text-slate-500 px-2 py-0.5 rounded-sm hover:bg-slate-200 dark:hover:bg-darkBorder/80 transition-colors"
-                                                                >
-                                                                    +{hiddenCount} more
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                        
-                                                        {isObjectivesOpen && dateAssigns.length > 2 && (
-                                                            <button 
-                                                                onClick={(e) => { e.stopPropagation(); toggleObjectiveDropdown(date); }} 
-                                                                className="text-left text-[9px] font-bold text-slate-400 dark:text-darkMuted uppercase hover:text-black dark:hover:text-white transition-colors"
-                                                            >
-                                                                Show less
-                                                            </button>
+                                                    {/* Objectives Logic */}
+                                                    <div className="flex-1 min-w-0">
+                                                        {dateAssigns.length > 0 && (
+                                                            tooManyObjectives ? (
+                                                                /* Show Dropdown trigger if too many */
+                                                                <div className="flex flex-col gap-2">
+                                                                    <button 
+                                                                        onClick={(e) => { e.stopPropagation(); toggleObjectiveDropdown(date); }}
+                                                                        className="flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black text-[9px] font-black uppercase px-2 py-1 rounded-sm w-fit"
+                                                                    >
+                                                                        Objectives ({dateAssigns.length})
+                                                                        <svg className={`transition-transform duration-200 ${isObjectivesOpen ? 'rotate-180' : ''}`} width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                                                    </button>
+                                                                    <div className={`dropdown-enter ${isObjectivesOpen ? 'dropdown-active' : ''}`}>
+                                                                        <div className="flex flex-col gap-1.5 pt-2 pb-1 border-l border-slate-200 dark:border-darkBorder pl-3">
+                                                                            {dateAssigns.map(a => (
+                                                                                <div key={a.id} className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-tight">• {a.title}</div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                /* Show normally if only 1 or 2 */
+                                                                <div className="flex flex-wrap gap-1.5">
+                                                                    {dateAssigns.map(a => (
+                                                                        <span key={a.id} className="text-[9px] font-black text-white dark:text-black bg-black dark:bg-white px-2 py-0.5 uppercase rounded-sm truncate max-w-[140px]">
+                                                                            {a.title}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )
                                                         )}
                                                     </div>
                                                 </div>
