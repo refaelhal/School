@@ -429,9 +429,9 @@
                                     const isDoneOpen = !!openDoneDropdowns[date];
                                     const isObjectivesOpen = !!openObjectiveDropdowns[date];
 
-                                    // Dropdown Logic for overflow objectives
-                                    const visibleAssigns = isObjectivesOpen ? dateAssigns : dateAssigns.slice(0, 2);
-                                    const hiddenCount = dateAssigns.length - 2;
+                                    // MODIFIED LOGIC: If too many objectives, show NONE until dropdown pressed
+                                    const tooManyObjectives = dateAssigns.length > 2;
+                                    const visibleAssigns = (tooManyObjectives && !isObjectivesOpen) ? [] : dateAssigns;
 
                                     return (
                                         <div key={date} onClick={() => setSelectedDate(date)} className={`py-6 border-b border-slate-100 dark:border-darkBorder transition-all ${!isActive && !isRealToday && allTasks.length === 0 && dateAssigns.length === 0 ? 'opacity-40 grayscale' : ''}`}>
@@ -440,18 +440,20 @@
                                                     <span className={`text-[11px] font-bold uppercase tracking-wider whitespace-nowrap mt-1 ${isActive ? 'text-black dark:text-white underline underline-offset-4' : 'text-slate-600 dark:text-darkMuted'}`}>{isRealToday ? 'Today' : formatDate(date)}</span>
                                                     <div className="flex flex-wrap gap-1.5 overflow-hidden">
                                                         {visibleAssigns.map(a => (<span key={a.id} className="text-[9px] font-black text-white dark:text-black bg-black dark:bg-white px-2 py-0.5 uppercase rounded-sm truncate max-w-[120px]">{a.title}</span>))}
-                                                        {hiddenCount > 0 && !isObjectivesOpen && (
+                                                        
+                                                        {tooManyObjectives && !isObjectivesOpen && (
                                                             <button 
                                                                 onClick={(e) => { e.stopPropagation(); toggleObjectiveDropdown(date); }} 
-                                                                className="text-[9px] font-bold bg-slate-100 dark:bg-darkBorder text-slate-500 px-2 py-0.5 rounded-sm hover:bg-slate-200 dark:hover:bg-darkBorder/80 transition-colors"
+                                                                className="text-[9px] font-black bg-black dark:bg-white text-white dark:text-black px-3 py-1 uppercase rounded-full hover:scale-105 active:scale-95 transition-all shadow-sm flex items-center gap-1.5"
                                                             >
-                                                                +{hiddenCount} more
+                                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><path d="M6 9l6 6 6-6"/></svg>
+                                                                {dateAssigns.length} Objectives
                                                             </button>
                                                         )}
-                                                        {isObjectivesOpen && dateAssigns.length > 2 && (
+                                                        {tooManyObjectives && isObjectivesOpen && (
                                                             <button 
                                                                 onClick={(e) => { e.stopPropagation(); toggleObjectiveDropdown(date); }} 
-                                                                className="text-[9px] font-bold text-slate-400 dark:text-darkMuted uppercase px-1"
+                                                                className="text-[9px] font-bold text-slate-400 dark:text-darkMuted uppercase px-1 hover:text-black dark:hover:text-white"
                                                             >
                                                                 Show less
                                                             </button>
@@ -559,4 +561,3 @@
     </script>
 </body>
 </html>
-
