@@ -66,8 +66,18 @@
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
-        .dropdown-enter { max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; }
-        .dropdown-active { max-height: 1000px; opacity: 1; }
+        /* Dropdown specific animation */
+        .objective-dropdown-enter { 
+            max-height: 0; 
+            opacity: 0; 
+            overflow: hidden; 
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease; 
+        }
+        .objective-dropdown-active { 
+            max-height: 500px; 
+            opacity: 1; 
+            margin-top: 8px;
+        }
         
         .nav-blur { backdrop-filter: blur(12px); background-color: rgba(255, 255, 255, 0.75); }
         .dark .nav-blur { background-color: rgba(20, 20, 20, 0.75); border-color: rgba(255, 255, 255, 0.1); }
@@ -429,36 +439,45 @@
                                     const isDoneOpen = !!openDoneDropdowns[date];
                                     const isObjectivesOpen = !!openObjectiveDropdowns[date];
 
-                                    // MODIFIED LOGIC: If too many objectives, show NONE until dropdown pressed
+                                    // Dropdown Logic: If more than 2 objectives, hide all and show a dropdown list button
                                     const tooManyObjectives = dateAssigns.length > 2;
-                                    const visibleAssigns = (tooManyObjectives && !isObjectivesOpen) ? [] : dateAssigns;
 
                                     return (
                                         <div key={date} onClick={() => setSelectedDate(date)} className={`py-6 border-b border-slate-100 dark:border-darkBorder transition-all ${!isActive && !isRealToday && allTasks.length === 0 && dateAssigns.length === 0 ? 'opacity-40 grayscale' : ''}`}>
                                             <div className="flex flex-col gap-2 mb-4 px-2">
-                                                <div className="flex items-start gap-3">
-                                                    <span className={`text-[11px] font-bold uppercase tracking-wider whitespace-nowrap mt-1 ${isActive ? 'text-black dark:text-white underline underline-offset-4' : 'text-slate-600 dark:text-darkMuted'}`}>{isRealToday ? 'Today' : formatDate(date)}</span>
-                                                    <div className="flex flex-wrap gap-1.5 overflow-hidden">
-                                                        {visibleAssigns.map(a => (<span key={a.id} className="text-[9px] font-black text-white dark:text-black bg-black dark:bg-white px-2 py-0.5 uppercase rounded-sm truncate max-w-[120px]">{a.title}</span>))}
+                                                <div className="flex flex-col gap-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className={`text-[11px] font-bold uppercase tracking-wider whitespace-nowrap ${isActive ? 'text-black dark:text-white underline underline-offset-4' : 'text-slate-600 dark:text-darkMuted'}`}>{isRealToday ? 'Today' : formatDate(date)}</span>
                                                         
-                                                        {tooManyObjectives && !isObjectivesOpen && (
+                                                        {!tooManyObjectives ? (
+                                                            <div className="flex flex-wrap gap-1.5 overflow-hidden">
+                                                                {dateAssigns.map(a => (<span key={a.id} className="text-[9px] font-black text-white dark:text-black bg-black dark:bg-white px-2 py-0.5 uppercase rounded-sm truncate max-w-[120px]">{a.title}</span>))}
+                                                            </div>
+                                                        ) : (
                                                             <button 
                                                                 onClick={(e) => { e.stopPropagation(); toggleObjectiveDropdown(date); }} 
-                                                                className="text-[9px] font-black bg-black dark:bg-white text-white dark:text-black px-3 py-1 uppercase rounded-full hover:scale-105 active:scale-95 transition-all shadow-sm flex items-center gap-1.5"
+                                                                className="text-[9px] font-black bg-slate-100 dark:bg-darkBorder text-slate-600 dark:text-darkMuted px-3 py-1 uppercase rounded-full hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all flex items-center gap-1.5"
                                                             >
-                                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><path d="M6 9l6 6 6-6"/></svg>
+                                                                <svg className={`transition-transform duration-200 ${isObjectivesOpen ? 'rotate-180' : ''}`} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><path d="M6 9l6 6 6-6"/></svg>
                                                                 {dateAssigns.length} Objectives
                                                             </button>
                                                         )}
-                                                        {tooManyObjectives && isObjectivesOpen && (
-                                                            <button 
-                                                                onClick={(e) => { e.stopPropagation(); toggleObjectiveDropdown(date); }} 
-                                                                className="text-[9px] font-bold text-slate-400 dark:text-darkMuted uppercase px-1 hover:text-black dark:hover:text-white"
-                                                            >
-                                                                Show less
-                                                            </button>
-                                                        )}
                                                     </div>
+
+                                                    {/* The Dropdown List */}
+                                                    {tooManyObjectives && (
+                                                        <div className={`objective-dropdown-enter ${isObjectivesOpen ? 'objective-dropdown-active' : ''}`}>
+                                                            <div className="flex flex-col gap-1.5 bg-slate-50 dark:bg-white/5 p-3 rounded-xl border border-slate-100 dark:border-white/10">
+                                                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Due today:</p>
+                                                                {dateAssigns.map(a => (
+                                                                    <div key={a.id} className="flex items-center gap-2 group">
+                                                                        <div className="w-1 h-1 rounded-full bg-black dark:bg-white"></div>
+                                                                        <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase truncate">{a.title}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -542,7 +561,7 @@
                                             onChange={(e) => setDeleteLinkedTasks(e.target.checked)}
                                             className="w-4 h-4 accent-black dark:accent-white"
                                         />
-                                        <label htmlFor="deleteAllTasks" className="text-[10px] font-bold uppercase tracking-wider dark:text-darkMuted">Delete linked tasks too</label>
+                                        <label htmlFor=\"deleteAllTasks\" className="text-[10px] font-bold uppercase tracking-wider dark:text-darkMuted">Delete linked tasks too</label>
                                     </div>
                                 )}
 
