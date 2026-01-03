@@ -76,31 +76,30 @@
         .custom-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         .dark .custom-scroll::-webkit-scrollbar-thumb { background: #404040; }
 
-        /* Updated Objective Button: Fit-to-text width and smaller height */
+        /* Ultra Compact Objective Button */
         .objective-compact-btn {
             appearance: none;
             -webkit-appearance: none;
             background: transparent;
             border: 1px solid #e2e8f0;
-            padding: 2px 22px 2px 8px; /* Reduced vertical padding */
+            padding: 1px 16px 1px 6px; /* Ultra tight padding */
             font-weight: 500;
             text-transform: uppercase;
-            font-size: 9px; /* Slightly smaller text */
-            letter-spacing: 0.02em;
+            font-size: 8px; /* Tiny text */
+            letter-spacing: 0.01em;
             cursor: pointer;
             outline: none;
-            border-radius: 4px;
+            border-radius: 3px;
             color: #64748b;
-            line-height: 1;
-            width: fit-content; /* Dynamically sizes to text */
-            min-width: 60px;
+            line-height: 1.2;
+            width: fit-content;
             white-space: nowrap;
             position: relative;
         }
         .dark .objective-compact-btn { border-color: #262626; color: #a3a3a3; }
         .objective-chevron {
             position: absolute;
-            right: 6px;
+            right: 4px;
             top: 50%;
             transform: translateY(-50%);
             pointer-events: none;
@@ -466,7 +465,7 @@
                                                                 <option disabled hidden value="">{dateAssigns.length} Objectives</option>
                                                                 {dateAssigns.map(a => <option key={a.id} disabled>{a.title}</option>)}
                                                             </select>
-                                                            <svg className="objective-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                                            <svg className="objective-chevron" width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                                         </div>
                                                     )}
                                                 </div>
