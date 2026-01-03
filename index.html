@@ -76,34 +76,47 @@
         .custom-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         .dark .custom-scroll::-webkit-scrollbar-thumb { background: #404040; }
 
-        /* Ultra Compact Objective Button */
-        .objective-compact-btn {
+        /* NEW: Minimal Redesigned Button Style */
+        .btn-minimal-trigger {
             appearance: none;
             -webkit-appearance: none;
             background: transparent;
             border: 1px solid #e2e8f0;
-            padding: 1px 16px 1px 6px; /* Ultra tight padding */
-            font-weight: 500;
+            padding: 2px 14px 2px 6px;
+            font-size: 8.5px;
+            font-weight: 700;
             text-transform: uppercase;
-            font-size: 8px; /* Tiny text */
-            letter-spacing: 0.01em;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            border-radius: 4px;
             cursor: pointer;
-            outline: none;
-            border-radius: 3px;
-            color: #64748b;
-            line-height: 1.2;
-            width: fit-content;
-            white-space: nowrap;
             position: relative;
+            display: flex;
+            align-items: center;
+            line-height: 1;
+            transition: all 0.2s ease;
         }
-        .dark .objective-compact-btn { border-color: #262626; color: #a3a3a3; }
-        .objective-chevron {
+        .dark .btn-minimal-trigger {
+            border-color: #262626;
+            color: #737373;
+        }
+        .btn-minimal-trigger:hover {
+            border-color: #cbd5e1;
+            color: #64748b;
+        }
+        .dark .btn-minimal-trigger:hover {
+            border-color: #404040;
+            color: #a3a3a3;
+        }
+        .btn-chevron {
             position: absolute;
             right: 4px;
             top: 50%;
             transform: translateY(-50%);
-            pointer-events: none;
-            color: #94a3b8;
+            transition: transform 0.3s ease;
+        }
+        .btn-chevron.open {
+            transform: translateY(-50%) rotate(180deg);
         }
     </style>
 </head>
@@ -127,6 +140,7 @@
             });
             const [activeTab, setActiveTab] = useState('timeline');
             const [openDoneDropdowns, setOpenDoneDropdowns] = useState({});
+            const [openObjectiveDropdowns, setOpenObjectiveDropdowns] = useState({});
             const [assignments, setAssignments] = useState(() => {
                 const saved = localStorage.getItem('school_assignments');
                 return saved ? JSON.parse(saved) : [];
@@ -279,6 +293,10 @@
 
             const toggleDoneDropdown = (date) => {
                 setOpenDoneDropdowns(prev => ({ ...prev, [date]: !prev[date] }));
+            };
+
+            const toggleObjectiveDropdown = (date) => {
+                setOpenObjectiveDropdowns(prev => ({ ...prev, [date]: !prev[date] }));
             };
 
             const getDaysRemaining = (deadline) => {
@@ -452,6 +470,7 @@
                                     const isActive = selectedDate === date;
                                     const isRealToday = date === todayStr;
                                     const isDoneOpen = !!openDoneDropdowns[date];
+                                    const isObjectivesOpen = !!openObjectiveDropdowns[date];
 
                                     return (
                                         <div key={date} onClick={() => setSelectedDate(date)} className={`py-6 border-b border-slate-100 dark:border-darkBorder transition-all ${!isActive && !isRealToday && allTasks.length === 0 && dateAssigns.length === 0 ? 'opacity-40 grayscale' : ''}`}>
@@ -461,13 +480,26 @@
                                                     
                                                     {dateAssigns.length > 0 && (
                                                         <div className="relative inline-block" onClick={e => e.stopPropagation()}>
-                                                            <select className="objective-compact-btn">
-                                                                <option disabled hidden value="">{dateAssigns.length} Objectives</option>
-                                                                {dateAssigns.map(a => <option key={a.id} disabled>{a.title}</option>)}
-                                                            </select>
-                                                            <svg className="objective-chevron" width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                                            <button 
+                                                                onClick={() => toggleObjectiveDropdown(date)}
+                                                                className="btn-minimal-trigger"
+                                                            >
+                                                                {dateAssigns.length} {dateAssigns.length === 1 ? 'Objective' : 'Objectives'}
+                                                                <svg className={`btn-chevron ${isObjectivesOpen ? 'open' : ''}`} width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                                            </button>
                                                         </div>
                                                     )}
+                                                </div>
+                                                
+                                                {/* Objectives Dropdown Content */}
+                                                <div className={`dropdown-enter ${isObjectivesOpen ? 'dropdown-active' : ''}`}>
+                                                    <div className="flex flex-wrap gap-1.5 pt-2 pb-1">
+                                                        {dateAssigns.map(a => (
+                                                            <span key={a.id} className="text-[8px] font-bold text-white dark:text-black bg-black dark:bg-white px-1.5 py-0.5 uppercase tracking-wider rounded-[2px]">
+                                                                {a.title}
+                                                            </span>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             </div>
 
