@@ -2,12 +2,28 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Study Flow</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0a0a0a',
+                        darkCard: '#141414',
+                        darkBorder: '#262626',
+                        darkText: '#f5f5f5',
+                        darkMuted: '#a3a3a3'
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         input, select, textarea { font-size: 16px !important; }
         body { 
@@ -17,7 +33,9 @@
             position: relative;
             background-color: #ffffff;
             -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.3s ease;
         }
+        body.dark { background-color: #0a0a0a; color: #f5f5f5; }
         
         .island-popup {
             transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
@@ -33,28 +51,26 @@
 
         .island-input {
             background: transparent;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
             padding: 4px 0;
             outline: none;
-            color: black;
+            color: white;
             font-size: 14px;
             width: 100%;
             border-radius: 0;
             appearance: none;
             -webkit-appearance: none;
         }
-        .island-input:focus { border-color: rgba(0,0,0,0.4); }
+        .island-input:focus { border-color: rgba(255,255,255,0.4); }
 
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
-        .dropdown-enter { max-height: 0;
-            opacity: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
-        }
+        .dropdown-enter { max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; }
         .dropdown-active { max-height: 1000px; opacity: 1; }
         
-        .nav-blur { backdrop-filter: blur(12px);
-            background-color: rgba(255, 255, 255, 0.75); }
+        .nav-blur { backdrop-filter: blur(12px); background-color: rgba(255, 255, 255, 0.75); }
+        .dark .nav-blur { background-color: rgba(20, 20, 20, 0.75); border-color: rgba(255, 255, 255, 0.1); }
         
         .btn-minimal-trigger {
             appearance: none;
@@ -74,6 +90,7 @@
             line-height: 1;
             transition: all 0.2s ease;
         }
+        .dark .btn-minimal-trigger { border-color: #262626; color: #737373; }
         
         .btn-chevron {
             position: absolute;
@@ -93,11 +110,12 @@
         }
     </style>
 </head>
-<body class="text-slate-900 font-sans selection:bg-slate-100">
+<body class="text-slate-900 font-sans selection:bg-slate-100 dark:text-darkText dark:selection:bg-white/10">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
+
         const App = () => {
             const getLocalDateString = (date) => {
                 const offset = date.getTimezoneOffset();
@@ -106,9 +124,14 @@
             };
 
             const [now] = useState(new Date());
+            const [isDark, setIsDark] = useState(() => {
+                const saved = localStorage.getItem('study_flow_theme');
+                return saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+            });
             const [activeTab, setActiveTab] = useState('timeline');
             const [openDoneDropdowns, setOpenDoneDropdowns] = useState({});
             const [openMenuId, setOpenMenuId] = useState(null);
+
             const [assignments, setAssignments] = useState(() => {
                 const saved = localStorage.getItem('school_assignments');
                 return saved ? JSON.parse(saved) : [];
@@ -117,13 +140,11 @@
                 const saved = localStorage.getItem('daily_tasks');
                 return saved ? JSON.parse(saved) : {};
             });
-            const [hideEmptyDays, setHideEmptyDays] = useState(() => {
-                const saved = localStorage.getItem('study_flow_hide_empty');
-                return saved === 'true';
-            });
+            
             const [islandVisible, setIslandVisible] = useState(false);
             const [islandType, setIslandType] = useState('task');
             const [modalData, setModalData] = useState({ id: null, title: '', date: '', linkedGoalId: '' });
+            const [linkingContext, setLinkingContext] = useState(null);
             const [expandedGoalId, setExpandedGoalId] = useState(null);
             const [confirmDelete, setConfirmDelete] = useState(null);
             const [deleteLinkedTasks, setDeleteLinkedTasks] = useState(false);
@@ -135,6 +156,7 @@
             }, []);
 
             useEffect(() => {
+                window.history.pushState({ tab: activeTab }, '');
                 const handlePopState = (event) => {
                     if (event.state && event.state.tab) {
                         setActiveTab(event.state.tab);
@@ -151,12 +173,17 @@
                 }
             };
 
+            useEffect(() => {
+                if (isDark) { document.body.classList.add('dark'); localStorage.setItem('study_flow_theme', 'dark'); }
+                else { document.body.classList.remove('dark'); localStorage.setItem('study_flow_theme', 'light'); }
+            }, [isDark]);
+
             useEffect(() => { localStorage.setItem('school_assignments', JSON.stringify(assignments)); }, [assignments]);
             useEffect(() => { localStorage.setItem('daily_tasks', JSON.stringify(dailyTasks)); }, [dailyTasks]);
-            useEffect(() => { localStorage.setItem('study_flow_hide_empty', hideEmptyDays); }, [hideEmptyDays]);
 
             const todayStr = useMemo(() => getLocalDateString(now), [now]);
             const [selectedDate, setSelectedDate] = useState(todayStr);
+
             const timelineDates = useMemo(() => {
                 const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 let endDate = new Date(start);
@@ -169,16 +196,11 @@
                 const dateArray = [];
                 let currentDate = new Date(start);
                 while (currentDate <= endDate) {
-                    const dStr = getLocalDateString(currentDate);
-                    const hasTasks = (dailyTasks[dStr] || []).length > 0;
-                    const hasObjectives = assignments.some(a => a.deadline === dStr);
-                    if (!hideEmptyDays || hasTasks || hasObjectives || dStr === todayStr) {
-                        dateArray.push(dStr);
-                    }
+                    dateArray.push(getLocalDateString(currentDate));
                     currentDate.setDate(currentDate.getDate() + 1);
                 }
                 return dateArray;
-            }, [assignments, dailyTasks, now, hideEmptyDays, todayStr]);
+            }, [assignments, now]);
 
             const handleOpenIsland = (type, existingItem = null, dateContext = null) => {
                 setIslandType(type);
@@ -212,6 +234,7 @@
                     }
                 } else {
                     if (modalData.id) {
+                        // Handle date change for tasks
                         setDailyTasks(prev => {
                             const updated = { ...prev };
                             Object.keys(updated).forEach(d => {
@@ -304,23 +327,23 @@
                 return tasks.length === 0 ? 0 : Math.round((tasks.filter(t => t.done).length / tasks.length) * 100);
             }, [dailyTasks, todayStr]);
 
-            const ActionMenu = ({ onEdit, onDelete, id }) => {
+            const ActionMenu = ({ onEdit, onDelete, id, isObjective }) => {
                 const isOpen = openMenuId === id;
                 return (
                     <div className="relative" onClick={e => e.stopPropagation()}>
                         <button 
                             onClick={(e) => { e.stopPropagation(); setOpenMenuId(isOpen ? null : id); }}
-                            className="p-2 text-slate-300 hover:text-black transition-colors"
+                            className="p-2 text-slate-300 dark:text-darkMuted hover:text-black dark:hover:text-white transition-colors"
                         >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
                         </button>
                         {isOpen && (
-                            <div className="absolute right-0 top-8 z-[200] bg-white border border-slate-100 shadow-xl rounded-xl overflow-hidden min-w-[100px] fade-in">
-                                <button onClick={() => { onEdit(); setOpenMenuId(null); }} className="w-full text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 flex items-center gap-2">
+                            <div className="absolute right-0 top-8 z-[200] bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder shadow-xl rounded-xl overflow-hidden min-w-[100px] fade-in">
+                                <button onClick={() => { onEdit(); setOpenMenuId(null); }} className="w-full text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                                     Edit
                                 </button>
-                                <button onClick={() => { onDelete(); setOpenMenuId(null); }} className="w-full text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50 flex items-center gap-2 border-t border-slate-50">
+                                <button onClick={() => { onDelete(); setOpenMenuId(null); }} className="w-full text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2 border-t border-slate-50 dark:border-darkBorder">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                     Delete
                                 </button>
@@ -332,8 +355,10 @@
 
             return (
                 <div className="max-w-xl mx-auto px-6 pt-10 pb-32 w-full relative min-h-screen">
+                    
+                    {/* Island Pop-up */}
                     <div className="fixed top-0 left-0 right-0 z-[200] flex justify-center pt-4 px-6 pointer-events-none">
-                        <div className={`island-popup w-full max-w-md bg-black shadow-2xl rounded-[32px] p-6 pointer-events-auto ${islandVisible ? 'active' : ''}`}>
+                        <div className={`island-popup w-full max-w-md bg-black dark:bg-[#1a1a1a] shadow-2xl rounded-[32px] p-6 pointer-events-auto ${islandVisible ? 'active' : ''}`}>
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-white text-[10px] font-black uppercase tracking-[0.2em]">
                                     {modalData.id ? 'Edit ' : 'Add '} {islandType === 'goal' ? 'Objective' : 'Task'}
@@ -348,7 +373,7 @@
                                     value={modalData.title} 
                                     onChange={e => setModalData({...modalData, title: e.target.value})} 
                                     placeholder="Title..." 
-                                    className="w-full bg-transparent border-b border-white/10 py-2 outline-none text-white text-lg placeholder:text-white/20 focus:border-white/40 transition-colors" 
+                                    className={`w-full bg-transparent border-b border-white/10 py-2 outline-none text-white text-lg placeholder:text-white/20 focus:border-white/40 transition-colors`} 
                                 />
                                 {islandType === 'goal' ? (
                                     <div className="space-y-1 w-full">
@@ -359,7 +384,7 @@
                                     <div className="grid grid-cols-2 gap-6">
                                         <div className="space-y-1">
                                             <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Date</label>
-                                            <input type="date" value={modalData.date} onChange={e => setModalData({...modalData, date: e.target.value})} className="island-input" />
+                                            <input type="date" value={modalData.date} onChange={e => setModalData({...modalData, date: e.target.value})} className={`island-input`} />
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Link Objective</label>
@@ -381,19 +406,21 @@
                         </div>
                     </div>
 
+                    {/* Header */}
                     <div className="flex justify-between items-start mb-16 mt-6">
                         <div>
+                            <h1 className="text-2xl font-light tracking-tight text-slate-900 dark:text-darkText">Study Flow</h1>
                             <div className="mt-2 flex items-center gap-3">
-                                <div className="w-24 h-1 bg-slate-100 rounded-full overflow-hidden">
-                                    <div className="h-full bg-black transition-all duration-500" style={{width: `${todayCompletionRate}%`}}></div>
+                                <div className="w-24 h-1 bg-slate-100 dark:bg-darkBorder rounded-full overflow-hidden">
+                                    <div className="h-full bg-black dark:bg-white transition-all duration-500" style={{width: `${todayCompletionRate}%`}}></div>
                                 </div>
-                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Today: {todayCompletionRate}%</span>
+                                <span className="text-[10px] font-bold text-slate-600 dark:text-darkMuted uppercase tracking-widest">Today: {todayCompletionRate}%</span>
                             </div>
                         </div>
                         {activeTab !== 'settings' && (
                             <button 
                                 onClick={() => handleOpenIsland(activeTab === 'timeline' ? 'task' : 'goal')}
-                                className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-black hover:border-black transition-all active:scale-90"
+                                className="w-10 h-10 rounded-full border border-slate-200 dark:border-darkBorder flex items-center justify-center text-slate-400 hover:text-black dark:hover:text-white hover:border-black dark:hover:border-white transition-all active:scale-90"
                             >
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             </button>
@@ -402,28 +429,28 @@
 
                     {activeTab === 'settings' && (
                         <section className="fade-in">
-                            <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-6 border-b border-slate-100 pb-2">Settings</h2>
+                            <h2 className="text-[10px] font-bold text-slate-500 dark:text-darkMuted uppercase tracking-[0.2em] mb-6 border-b border-slate-100 dark:border-darkBorder pb-2">Settings</h2>
                             <div className="space-y-6">
-                                <div className="flex items-center justify-between py-4 border-b border-slate-50">
+                                <div className="flex items-center justify-between py-4 border-b border-slate-50 dark:border-darkBorder">
                                     <div>
-                                        <h3 className="text-sm font-semibold">Concise Timeline</h3>
-                                        <p className="text-[11px] text-slate-400">Hide days without tasks or objectives</p>
+                                        <h3 className="text-sm font-semibold dark:text-white">Interface Appearance</h3>
+                                        <p className="text-[11px] text-slate-400 dark:text-darkMuted">Currently in {isDark ? 'Dark' : 'Light'} Mode</p>
                                     </div>
-                                    <button 
-                                        onClick={() => setHideEmptyDays(!hideEmptyDays)} 
-                                        className={`w-12 h-6 rounded-full transition-colors relative ${hideEmptyDays ? 'bg-black' : 'bg-slate-200'}`}
-                                    >
-                                        <div className={`absolute top-1 w-4 h-4 rounded-full transition-all ${hideEmptyDays ? 'left-7 bg-white' : 'left-1 bg-white'}`}></div>
+                                    <button onClick={() => setIsDark(!isDark)} className="w-12 h-12 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-darkBorder hover:scale-105 transition-transform">
+                                        {isDark ? (
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                                        ) : (
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-500"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                                        )}
                                     </button>
                                 </div>
-                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-300 text-center pt-4">App is running in persistent light mode</p>
                             </div>
                         </section>
                     )}
 
                     {activeTab === 'objectives' && (
                         <section className="fade-in">
-                            <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-6 border-b border-slate-100 pb-2">Active Objectives</h2>
+                            <h2 className="text-[10px] font-bold text-slate-500 dark:text-darkMuted uppercase tracking-[0.2em] mb-6 border-b border-slate-100 dark:border-darkBorder pb-2">Active Objectives</h2>
                             {assignments.length === 0 ? <p className="text-xs text-slate-400 italic font-medium">No active goals.</p> : (
                                 <div className="space-y-4">
                                     {assignments.map(a => {
@@ -431,29 +458,31 @@
                                         const doneCount = linkedTasks.filter(t => t.done).length;
                                         const isExpanded = expandedGoalId === a.id;
                                         return (
-                                            <div key={a.id} className="border-b border-slate-50 pb-2 last:border-0">
+                                            <div key={a.id} className="border-b border-slate-50 dark:border-darkBorder pb-2 last:border-0">
                                                 <div onClick={() => setExpandedGoalId(isExpanded ? null : a.id)} className="flex justify-between items-center group cursor-pointer py-2">
                                                     <div className="flex items-center gap-3">
-                                                        <svg className={`text-slate-300 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-black' : ''}`} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                                        <svg className={`text-slate-300 dark:text-darkMuted transition-transform duration-300 ${isExpanded ? 'rotate-90 text-black dark:text-white' : ''}`} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"></polyline></svg>
                                                         <div className="flex flex-col">
                                                             <div className="flex items-center gap-2">
-                                                                <span className={`text-sm font-semibold ${isExpanded ? 'text-black' : 'text-slate-900'}`}>{a.title}</span>
-                                                                <span className="text-[9px] font-black bg-slate-100 text-slate-400 px-1.5 rounded-full">{doneCount}/{linkedTasks.length}</span>
+                                                                <span className={`text-sm font-semibold ${isExpanded ? 'text-black dark:text-white' : 'text-slate-900 dark:text-darkText'}`}>{a.title}</span>
+                                                                <span className="text-[9px] font-black bg-slate-100 dark:bg-darkBorder text-slate-400 dark:text-darkMuted px-1.5 rounded-full">{doneCount}/{linkedTasks.length}</span>
                                                             </div>
-                                                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">{getDaysRemaining(a.deadline)}</span>
+                                                            <span className="text-[10px] text-slate-500 dark:text-darkMuted font-bold uppercase tracking-tighter">{getDaysRemaining(a.deadline)}</span>
                                                         </div>
                                                     </div>
-                                                    <ActionMenu id={a.id} onEdit={() => handleOpenIsland('goal', a)} onDelete={() => setConfirmDelete({ type: 'objective', id: a.id })} />
+                                                    <ActionMenu 
+                                                        id={a.id}
+                                                        onEdit={() => handleOpenIsland('goal', a)}
+                                                        onDelete={() => setConfirmDelete({ type: 'objective', id: a.id })}
+                                                    />
                                                 </div>
                                                 <div className={`dropdown-enter ${isExpanded ? 'dropdown-active' : ''}`}>
-                                                    <div className="mt-2 mb-4 ml-6 space-y-3 border-l-2 border-slate-50 pl-4">
-                                                        {linkedTasks.length === 0 ? (
-                                                            <p className="text-[10px] text-slate-300 italic py-2">No linked tasks.</p>
-                                                        ) : linkedTasks.map(t => (
+                                                    <div className="mt-2 mb-4 ml-6 space-y-3 border-l-2 border-slate-50 dark:border-darkBorder pl-4">
+                                                        {linkedTasks.length === 0 ? <p className="text-[10px] text-slate-300 dark:text-darkMuted italic py-2">No linked tasks.</p> : linkedTasks.map(t => (
                                                             <div key={t.id} className="flex items-center justify-between group/linkitem py-1">
                                                                 <div className="flex flex-col">
-                                                                    <span className={`text-xs ${t.done ? 'text-slate-300 line-through' : 'text-slate-600 font-medium'}`}>{t.text}</span>
-                                                                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tight">{formatDate(t.date)}</span>
+                                                                    <span className={`text-xs ${t.done ? 'text-slate-300 dark:text-darkMuted line-through' : 'text-slate-600 dark:text-slate-300 font-medium'}`}>{t.text}</span>
+                                                                    <span className="text-[8px] font-bold text-slate-400 dark:text-darkMuted uppercase tracking-tight">{formatDate(t.date)}</span>
                                                                 </div>
                                                                 <button onClick={() => linkTaskToGoal(t.date, t.id, null)} className="opacity-0 group-hover/linkitem:opacity-100 text-[10px] font-black text-red-500 uppercase tracking-tighter">Unlink</button>
                                                             </div>
@@ -470,7 +499,7 @@
 
                     {activeTab === 'timeline' && (
                         <section className="fade-in">
-                            <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-6 border-b border-slate-100 pb-2">Timeline</h2>
+                            <h2 className="text-[10px] font-bold text-slate-500 dark:text-darkMuted uppercase tracking-[0.2em] mb-6 border-b border-slate-100 dark:border-darkBorder pb-2">Timeline</h2>
                             <div className="space-y-px">
                                 {timelineDates.map(date => {
                                     const dateAssigns = assignments.filter(a => a.deadline === date);
@@ -482,10 +511,11 @@
                                     const isDoneOpen = !!openDoneDropdowns[date];
 
                                     return (
-                                        <div key={date} onClick={() => setSelectedDate(date)} className={`py-6 border-b border-slate-100 transition-all ${!isActive && !isRealToday && allTasks.length === 0 && dateAssigns.length === 0 ? 'opacity-40 grayscale' : ''}`}>
+                                        <div key={date} onClick={() => setSelectedDate(date)} className={`py-6 border-b border-slate-100 dark:border-darkBorder transition-all ${!isActive && !isRealToday && allTasks.length === 0 && dateAssigns.length === 0 ? 'opacity-40 grayscale' : ''}`}>
                                             <div className="flex flex-col gap-2 mb-4 px-2">
                                                 <div className="flex items-center gap-3">
-                                                    <span className={`text-[11px] font-bold uppercase tracking-wider whitespace-nowrap ${isActive ? 'text-black underline underline-offset-4' : 'text-slate-600'}`}>{isRealToday ? 'Today' : formatDate(date)}</span>
+                                                    <span className={`text-[11px] font-bold uppercase tracking-wider whitespace-nowrap ${isActive ? 'text-black dark:text-white underline underline-offset-4' : 'text-slate-600 dark:text-darkMuted'}`}>{isRealToday ? 'Today' : formatDate(date)}</span>
+                                                    
                                                     {dateAssigns.length > 0 && (
                                                         <div className="relative inline-block" onClick={e => e.stopPropagation()}>
                                                             <div className="btn-minimal-trigger">
@@ -493,7 +523,9 @@
                                                                 <svg className="btn-chevron" width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                                                 <select className="native-trigger-overlay">
                                                                     <option disabled selected>{dateAssigns.length} Objectives</option>
-                                                                    {dateAssigns.map(a => <option key={a.id}>{a.title}</option>)}
+                                                                    {dateAssigns.map(a => (
+                                                                        <option key={a.id}>{a.title}</option>
+                                                                    ))}
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -504,7 +536,7 @@
                                             <div className="space-y-4 px-2">
                                                 {doneTasks.length > 0 && (
                                                     <div className="mb-2">
-                                                        <button onClick={(e) => { e.stopPropagation(); toggleDoneDropdown(date); }} className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors">
+                                                        <button onClick={(e) => { e.stopPropagation(); toggleDoneDropdown(date); }} className="flex items-center gap-2 text-[10px] font-bold text-slate-400 dark:text-darkMuted uppercase tracking-widest hover:text-slate-600 transition-colors">
                                                             <svg className={`transition-transform duration-200 ${isDoneOpen ? 'rotate-90' : ''}`} width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="9 18 15 12 9 6"></polyline></svg>
                                                             Completed ({doneTasks.length})
                                                         </button>
@@ -512,11 +544,15 @@
                                                             <div className="pt-3 space-y-3 pb-2">
                                                                 {doneTasks.map(t => (
                                                                     <div key={t.id} className="flex items-center gap-4 opacity-60 group">
-                                                                        <div onClick={() => toggleTask(date, t.id)} className="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-black">
-                                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                                        <div onClick={() => toggleTask(date, t.id)} className="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-black dark:bg-white">
+                                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isDark ? "black" : "white"} strokeWidth="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                                                         </div>
-                                                                        <span className="text-sm text-slate-400 line-through flex-1">{t.text}</span>
-                                                                        <ActionMenu id={t.id} onEdit={() => handleOpenIsland('task', t, date)} onDelete={() => setConfirmDelete({ type: 'task', id: t.id, date })} />
+                                                                        <span className="text-sm text-slate-400 dark:text-darkMuted line-through flex-1">{t.text}</span>
+                                                                        <ActionMenu 
+                                                                            id={t.id}
+                                                                            onEdit={() => handleOpenIsland('task', t, date)}
+                                                                            onDelete={() => setConfirmDelete({ type: 'task', id: t.id, date })}
+                                                                        />
                                                                     </div>
                                                                 ))}
                                                             </div>
@@ -529,12 +565,18 @@
                                                     return (
                                                         <div key={t.id} className="flex flex-col gap-1 group/task relative">
                                                             <div className="flex items-center gap-4">
-                                                                <div onClick={() => toggleTask(date, t.id)} className="w-6 h-6 flex-shrink-0 flex items-center justify-center border-2 border-slate-300"></div>
+                                                                <div onClick={() => toggleTask(date, t.id)} className={`w-6 h-6 flex-shrink-0 flex items-center justify-center border-2 border-slate-300 dark:border-darkBorder`}></div>
                                                                 <div className="flex-1 flex flex-row items-baseline gap-2 min-w-0" onClick={() => toggleTask(date, t.id)}>
-                                                                    <span className="text-sm truncate text-slate-800 font-medium">{t.text}</span>
-                                                                    {linkedGoal && <span className="flex-shrink-0 text-[8px] font-bold uppercase tracking-[0.05em] px-1.5 py-0.5 rounded border text-slate-400 border-slate-100">{linkedGoal.title}</span>}
+                                                                    <span className="text-sm truncate text-slate-800 dark:text-darkText font-medium">{t.text}</span>
+                                                                    {linkedGoal && <span className="flex-shrink-0 text-[8px] font-bold uppercase tracking-[0.05em] px-1.5 py-0.5 rounded border text-slate-400 border-slate-100 dark:text-darkMuted dark:border-darkBorder">{linkedGoal.title}</span>}
                                                                 </div>
-                                                                <ActionMenu id={t.id} onEdit={() => handleOpenIsland('task', t, date)} onDelete={() => setConfirmDelete({ type: 'task', id: t.id, date })} />
+                                                                <div className="flex items-center">
+                                                                    <ActionMenu 
+                                                                        id={t.id}
+                                                                        onEdit={() => handleOpenIsland('task', t, date)}
+                                                                        onDelete={() => setConfirmDelete({ type: 'task', id: t.id, date })}
+                                                                    />
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     );
@@ -547,40 +589,44 @@
                         </section>
                     )}
 
+                    {/* Navigation */}
                     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[150] w-[180px]">
-                        <div className="nav-blur border border-slate-200/40 rounded-full h-[60px] flex items-center justify-between px-2 shadow-xl">
-                            <button onClick={() => navigateTo('timeline')} className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'timeline' ? 'bg-black text-white shadow-lg' : 'text-slate-400'}`}>
+                        <div className="nav-blur border border-slate-200/40 dark:border-white/10 rounded-full h-[60px] flex items-center justify-between px-2 shadow-xl">
+                            <button onClick={() => navigateTo('timeline')} className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'timeline' ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg' : 'text-slate-400 dark:text-darkMuted'}`}>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                             </button>
-                            <button onClick={() => navigateTo('objectives')} className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'objectives' ? 'bg-black text-white shadow-lg' : 'text-slate-400'}`}>
+                            <button onClick={() => navigateTo('objectives')} className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'objectives' ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg' : 'text-slate-400 dark:text-darkMuted'}`}>
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                             </button>
-                            <button onClick={() => navigateTo('settings')} className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'settings' ? 'bg-black text-white shadow-lg' : 'text-slate-400'}`}>
+                            <button onClick={() => navigateTo('settings')} className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'settings' ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg' : 'text-slate-400 dark:text-darkMuted'}`}>
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                             </button>
                         </div>
                     </div>
 
+                    {/* Delete Confirm Modal */}
                     {confirmDelete && (
-                        <div className="fixed inset-0 z-[300] bg-white/80 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setConfirmDelete(null)}>
-                            <div className="w-full max-w-sm fade-in bg-white p-8 border border-slate-100 shadow-2xl rounded-2xl" onClick={e => e.stopPropagation()}>
-                                <h3 className="text-lg font-light mb-2">Confirm Delete</h3>
-                                <p className="text-sm text-slate-500 mb-4">Remove this {confirmDelete.type}?</p>
+                        <div className="fixed inset-0 z-[300] bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setConfirmDelete(null)}>
+                            <div className="w-full max-w-sm fade-in bg-white dark:bg-darkCard p-8 border border-slate-100 dark:border-darkBorder shadow-2xl rounded-2xl" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-lg font-light mb-2 dark:text-white">Confirm Delete</h3>
+                                <p className="text-sm text-slate-500 dark:text-darkMuted mb-4">Remove this {confirmDelete.type}?</p>
+                                
                                 {confirmDelete.type === 'objective' && (
-                                    <div className="flex items-center gap-3 mb-6 bg-slate-50 p-3 rounded-lg">
+                                    <div className="flex items-center gap-3 mb-6 bg-slate-50 dark:bg-darkBorder/30 p-3 rounded-lg">
                                         <input 
                                             type="checkbox" 
                                             id="deleteAllTasks" 
                                             checked={deleteLinkedTasks} 
                                             onChange={(e) => setDeleteLinkedTasks(e.target.checked)}
-                                            className="w-4 h-4 accent-black"
+                                            className="w-4 h-4 accent-black dark:accent-white"
                                         />
-                                        <label htmlFor="deleteAllTasks" className="text-[10px] font-bold uppercase tracking-wider">Delete linked tasks too</label>
+                                        <label htmlFor="deleteAllTasks" className="text-[10px] font-bold uppercase tracking-wider dark:text-darkMuted">Delete linked tasks too</label>
                                     </div>
                                 )}
+
                                 <div className="flex gap-4">
                                     <button onClick={() => confirmDelete.type === 'objective' ? deleteAssignment(confirmDelete.id, deleteLinkedTasks) : deleteTask(confirmDelete.date, confirmDelete.id)} className="flex-1 bg-red-500 text-white py-3 font-bold text-[10px] uppercase tracking-widest rounded-lg">Delete</button>
-                                    <button onClick={() => setConfirmDelete(null)} className="flex-1 bg-slate-100 py-3 font-bold text-[10px] uppercase tracking-widest rounded-lg">Cancel</button>
+                                    <button onClick={() => setConfirmDelete(null)} className="flex-1 bg-slate-100 dark:bg-darkBorder py-3 font-bold text-[10px] uppercase tracking-widest dark:text-white rounded-lg">Cancel</button>
                                 </div>
                             </div>
                         </div>
