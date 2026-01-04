@@ -37,6 +37,20 @@
         }
         body.dark { background-color: #0a0a0a; color: #f5f5f5; }
         
+        /* Splash Screen & Entry Animation */
+        .splash-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.8s cubic-bezier(0.85, 0, 0.15, 1);
+        }
+        .splash-screen.slide-up {
+            transform: translateY(-100%);
+        }
+
         .island-popup {
             transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
             transform: translateY(-120%);
@@ -123,6 +137,7 @@
                 return adjustedDate.toISOString().split('T')[0];
             };
 
+            const [isLoading, setIsLoading] = useState(true);
             const [now] = useState(new Date());
             const [isDark, setIsDark] = useState(() => {
                 const saved = localStorage.getItem('study_flow_theme');
@@ -153,6 +168,12 @@
             const [expandedGoalId, setExpandedGoalId] = useState(null);
             const [confirmDelete, setConfirmDelete] = useState(null);
             const [deleteLinkedTasks, setDeleteLinkedTasks] = useState(false);
+
+            useEffect(() => {
+                // Simulate loading time for splash screen
+                const timer = setTimeout(() => setIsLoading(false), 1200);
+                return () => clearTimeout(timer);
+            }, []);
 
             useEffect(() => {
                 const handleGlobalClick = () => setOpenMenuId(null);
@@ -367,6 +388,11 @@
             return (
                 <div className="max-w-xl mx-auto px-6 pt-10 pb-32 w-full relative min-h-screen">
                     
+                    {/* Splash Screen Overlay */}
+                    <div className={`splash-screen bg-white dark:bg-darkBg ${!isLoading ? 'slide-up' : ''}`}>
+                        <h1 className="text-2xl font-light tracking-tight text-slate-900 dark:text-darkText">Study Flow</h1>
+                    </div>
+
                     {/* Island Pop-up */}
                     <div className="fixed top-0 left-0 right-0 z-[200] flex justify-center pt-4 px-6 pointer-events-none">
                         <div className={`island-popup w-full max-w-md bg-black dark:bg-[#1a1a1a] shadow-2xl rounded-[32px] p-6 pointer-events-auto ${islandVisible ? 'active' : ''}`}>
