@@ -4,15 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Study Flow</title>
-    <script>
-        (function() {
-            const saved = localStorage.getItem('study_flow_theme');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (saved === 'dark' || (!saved && prefersDark)) {
-                document.documentElement.classList.add('dark');
-            }
-        })();
-    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -75,15 +66,11 @@
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
-        .dropdown-enter { max-height: 0;
-            opacity: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
-        }
+        .dropdown-enter { max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; }
         .dropdown-active { max-height: 1000px; opacity: 1; }
         
-        .nav-blur { backdrop-filter: blur(12px);
-            background-color: rgba(255, 255, 255, 0.75); }
-        .dark .nav-blur { background-color: rgba(20, 20, 20, 0.75);
-            border-color: rgba(255, 255, 255, 0.1); }
+        .nav-blur { backdrop-filter: blur(12px); background-color: rgba(255, 255, 255, 0.75); }
+        .dark .nav-blur { background-color: rgba(20, 20, 20, 0.75); border-color: rgba(255, 255, 255, 0.1); }
         
         .btn-minimal-trigger {
             appearance: none;
@@ -128,6 +115,7 @@
 
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
+
         const App = () => {
             const getLocalDateString = (date) => {
                 const offset = date.getTimezoneOffset();
@@ -143,12 +131,6 @@
             const [activeTab, setActiveTab] = useState('timeline');
             const [openDoneDropdowns, setOpenDoneDropdowns] = useState({});
             const [openMenuId, setOpenMenuId] = useState(null);
-            
-            // New Setting Toggle
-            const [showOnlyActiveDates, setShowOnlyActiveDates] = useState(() => {
-                const saved = localStorage.getItem('study_flow_active_only');
-                return saved === 'true';
-            });
 
             const [assignments, setAssignments] = useState(() => {
                 const saved = localStorage.getItem('school_assignments');
@@ -158,10 +140,11 @@
                 const saved = localStorage.getItem('daily_tasks');
                 return saved ? JSON.parse(saved) : {};
             });
+            
             const [islandVisible, setIslandVisible] = useState(false);
             const [islandType, setIslandType] = useState('task');
-            // Added time to modalData
-            const [modalData, setModalData] = useState({ id: null, title: '', date: '', time: '12:00', linkedGoalId: '' });
+            const [modalData, setModalData] = useState({ id: null, title: '', date: '', linkedGoalId: '' });
+            const [linkingContext, setLinkingContext] = useState(null);
             const [expandedGoalId, setExpandedGoalId] = useState(null);
             const [confirmDelete, setConfirmDelete] = useState(null);
             const [deleteLinkedTasks, setDeleteLinkedTasks] = useState(false);
@@ -197,7 +180,6 @@
 
             useEffect(() => { localStorage.setItem('school_assignments', JSON.stringify(assignments)); }, [assignments]);
             useEffect(() => { localStorage.setItem('daily_tasks', JSON.stringify(dailyTasks)); }, [dailyTasks]);
-            useEffect(() => { localStorage.setItem('study_flow_active_only', showOnlyActiveDates); }, [showOnlyActiveDates]);
 
             const todayStr = useMemo(() => getLocalDateString(now), [now]);
             const [selectedDate, setSelectedDate] = useState(todayStr);
@@ -227,11 +209,10 @@
                         id: existingItem.id, 
                         title: existingItem.title || existingItem.text, 
                         date: dateContext || existingItem.deadline || existingItem.date, 
-                        time: existingItem.time || '12:00',
                         linkedGoalId: existingItem.linkedGoalId || '' 
                     });
                 } else {
-                    setModalData({ id: null, title: '', date: todayStr, time: '12:00', linkedGoalId: '' });
+                    setModalData({ id: null, title: '', date: todayStr, linkedGoalId: '' });
                 }
                 setIslandVisible(true);
             };
@@ -242,24 +223,24 @@
 
                 if (islandType === 'goal') {
                     if (modalData.id) {
-                        setAssignments(assignments.map(a => a.id === modalData.id ? { ...a, title: modalData.title, deadline: modalData.date, time: modalData.time } : a)
-                            .sort((a, b) => new Date(a.deadline + 'T' + (a.time || '00:00')) - new Date(b.deadline + 'T' + (b.time || '00:00'))));
+                        setAssignments(assignments.map(a => a.id === modalData.id ? { ...a, title: modalData.title, deadline: modalData.date } : a)
+                            .sort((a, b) => new Date(a.deadline) - new Date(b.deadline)));
                     } else {
                         setAssignments([...assignments, { 
                             id: Date.now(), 
                             title: modalData.title, 
-                            deadline: modalData.date,
-                            time: modalData.time
-                        }].sort((a, b) => new Date(a.deadline + 'T' + (a.time || '00:00')) - new Date(b.deadline + 'T' + (b.time || '00:00'))));
+                            deadline: modalData.date 
+                        }].sort((a, b) => new Date(a.deadline) - new Date(b.deadline)));
                     }
                 } else {
                     if (modalData.id) {
+                        // Handle date change for tasks
                         setDailyTasks(prev => {
                             const updated = { ...prev };
                             Object.keys(updated).forEach(d => {
                                 updated[d] = updated[d].filter(t => t.id !== modalData.id);
                             });
-                            const newTask = { id: modalData.id, text: modalData.title, done: false, time: modalData.time, linkedGoalId: modalData.linkedGoalId ? Number(modalData.linkedGoalId) : null };
+                            const newTask = { id: modalData.id, text: modalData.title, done: false, linkedGoalId: modalData.linkedGoalId ? Number(modalData.linkedGoalId) : null };
                             updated[modalData.date] = [...(updated[modalData.date] || []), newTask];
                             return updated;
                         });
@@ -268,7 +249,6 @@
                             id: Date.now(), 
                             text: modalData.title, 
                             done: false, 
-                            time: modalData.time,
                             linkedGoalId: modalData.linkedGoalId ? Number(modalData.linkedGoalId) : null 
                         };
                         setDailyTasks(prev => ({
@@ -347,7 +327,7 @@
                 return tasks.length === 0 ? 0 : Math.round((tasks.filter(t => t.done).length / tasks.length) * 100);
             }, [dailyTasks, todayStr]);
 
-            const ActionMenu = ({ onEdit, onDelete, id }) => {
+            const ActionMenu = ({ onEdit, onDelete, id, isObjective }) => {
                 const isOpen = openMenuId === id;
                 return (
                     <div className="relative" onClick={e => e.stopPropagation()}>
@@ -395,27 +375,28 @@
                                     placeholder="Title..." 
                                     className={`w-full bg-transparent border-b border-white/10 py-2 outline-none text-white text-lg placeholder:text-white/20 focus:border-white/40 transition-colors`} 
                                 />
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Date</label>
+                                {islandType === 'goal' ? (
+                                    <div className="space-y-1 w-full">
+                                        <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Deadline Date</label>
                                         <input type="date" value={modalData.date} onChange={e => setModalData({...modalData, date: e.target.value})} className="island-input" />
                                     </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Hour</label>
-                                        <input type="time" value={modalData.time} onChange={e => setModalData({...modalData, time: e.target.value})} className="island-input" />
-                                    </div>
-                                </div>
-                                {islandType !== 'goal' && (
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Link Objective</label>
-                                        <select 
-                                            value={modalData.linkedGoalId} 
-                                            onChange={e => setModalData({...modalData, linkedGoalId: e.target.value})}
-                                            className="island-input"
-                                        >
-                                            <option value="" className="text-black">None</option>
-                                            {assignments.map(a => <option key={a.id} value={a.id} className="text-black">{a.title}</option>)}
-                                        </select>
+                                ) : (
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Date</label>
+                                            <input type="date" value={modalData.date} onChange={e => setModalData({...modalData, date: e.target.value})} className={`island-input`} />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Link Objective</label>
+                                            <select 
+                                                value={modalData.linkedGoalId} 
+                                                onChange={e => setModalData({...modalData, linkedGoalId: e.target.value})}
+                                                className="island-input"
+                                            >
+                                                <option value="" className="text-black">None</option>
+                                                {assignments.map(a => <option key={a.id} value={a.id} className="text-black">{a.title}</option>)}
+                                            </select>
+                                        </div>
                                     </div>
                                 )}
                                 <button type="submit" className="w-full bg-white text-black py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] active:scale-95 transition-transform">
@@ -463,18 +444,6 @@
                                         )}
                                     </button>
                                 </div>
-                                <div className="flex items-center justify-between py-4 border-b border-slate-50 dark:border-darkBorder">
-                                    <div>
-                                        <h3 className="text-sm font-semibold dark:text-white">Timeline Filtering</h3>
-                                        <p className="text-[11px] text-slate-400 dark:text-darkMuted">Hide dates without tasks/objectives</p>
-                                    </div>
-                                    <button 
-                                        onClick={() => setShowOnlyActiveDates(!showOnlyActiveDates)} 
-                                        className={`w-12 h-6 rounded-full transition-colors relative ${showOnlyActiveDates ? 'bg-black dark:bg-white' : 'bg-slate-200 dark:bg-darkBorder'}`}
-                                    >
-                                        <div className={`absolute top-1 w-4 h-4 rounded-full transition-all ${showOnlyActiveDates ? 'right-1 bg-white dark:bg-black' : 'left-1 bg-white'}`}></div>
-                                    </button>
-                                </div>
                             </div>
                         </section>
                     )}
@@ -498,10 +467,14 @@
                                                                 <span className={`text-sm font-semibold ${isExpanded ? 'text-black dark:text-white' : 'text-slate-900 dark:text-darkText'}`}>{a.title}</span>
                                                                 <span className="text-[9px] font-black bg-slate-100 dark:bg-darkBorder text-slate-400 dark:text-darkMuted px-1.5 rounded-full">{doneCount}/{linkedTasks.length}</span>
                                                             </div>
-                                                            <span className="text-[10px] text-slate-500 dark:text-darkMuted font-bold uppercase tracking-tighter">{getDaysRemaining(a.deadline)} • {a.time || '12:00'}</span>
+                                                            <span className="text-[10px] text-slate-500 dark:text-darkMuted font-bold uppercase tracking-tighter">{getDaysRemaining(a.deadline)}</span>
                                                         </div>
                                                     </div>
-                                                    <ActionMenu id={a.id} onEdit={() => handleOpenIsland('goal', a)} onDelete={() => setConfirmDelete({ type: 'objective', id: a.id })} />
+                                                    <ActionMenu 
+                                                        id={a.id}
+                                                        onEdit={() => handleOpenIsland('goal', a)}
+                                                        onDelete={() => setConfirmDelete({ type: 'objective', id: a.id })}
+                                                    />
                                                 </div>
                                                 <div className={`dropdown-enter ${isExpanded ? 'dropdown-active' : ''}`}>
                                                     <div className="mt-2 mb-4 ml-6 space-y-3 border-l-2 border-slate-50 dark:border-darkBorder pl-4">
@@ -509,7 +482,7 @@
                                                             <div key={t.id} className="flex items-center justify-between group/linkitem py-1">
                                                                 <div className="flex flex-col">
                                                                     <span className={`text-xs ${t.done ? 'text-slate-300 dark:text-darkMuted line-through' : 'text-slate-600 dark:text-slate-300 font-medium'}`}>{t.text}</span>
-                                                                    <span className="text-[8px] font-bold text-slate-400 dark:text-darkMuted uppercase tracking-tight">{formatDate(t.date)} • {t.time || '12:00'}</span>
+                                                                    <span className="text-[8px] font-bold text-slate-400 dark:text-darkMuted uppercase tracking-tight">{formatDate(t.date)}</span>
                                                                 </div>
                                                                 <button onClick={() => linkTaskToGoal(t.date, t.id, null)} className="opacity-0 group-hover/linkitem:opacity-100 text-[10px] font-black text-red-500 uppercase tracking-tighter">Unlink</button>
                                                             </div>
@@ -528,7 +501,7 @@
                         <section className="fade-in">
                             <h2 className="text-[10px] font-bold text-slate-500 dark:text-darkMuted uppercase tracking-[0.2em] mb-6 border-b border-slate-100 dark:border-darkBorder pb-2">Timeline</h2>
                             <div className="space-y-px">
-                                {timelineDates.filter(date => !showOnlyActiveDates || (dailyTasks[date] && dailyTasks[date].length > 0) || (assignments.filter(a => a.deadline === date).length > 0)).map(date => {
+                                {timelineDates.map(date => {
                                     const dateAssigns = assignments.filter(a => a.deadline === date);
                                     const allTasks = dailyTasks[date] || [];
                                     const activeTasks = allTasks.filter(t => !t.done);
@@ -542,6 +515,7 @@
                                             <div className="flex flex-col gap-2 mb-4 px-2">
                                                 <div className="flex items-center gap-3">
                                                     <span className={`text-[11px] font-bold uppercase tracking-wider whitespace-nowrap ${isActive ? 'text-black dark:text-white underline underline-offset-4' : 'text-slate-600 dark:text-darkMuted'}`}>{isRealToday ? 'Today' : formatDate(date)}</span>
+                                                    
                                                     {dateAssigns.length > 0 && (
                                                         <div className="relative inline-block" onClick={e => e.stopPropagation()}>
                                                             <div className="btn-minimal-trigger">
@@ -549,7 +523,9 @@
                                                                 <svg className="btn-chevron" width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                                                 <select className="native-trigger-overlay">
                                                                     <option disabled selected>{dateAssigns.length} Objectives</option>
-                                                                    {dateAssigns.map(a => <option key={a.id}>{a.title} ({a.time || '12:00'})</option>)}
+                                                                    {dateAssigns.map(a => (
+                                                                        <option key={a.id}>{a.title}</option>
+                                                                    ))}
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -571,8 +547,12 @@
                                                                         <div onClick={() => toggleTask(date, t.id)} className="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-black dark:bg-white">
                                                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isDark ? "black" : "white"} strokeWidth="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                                                         </div>
-                                                                        <span className="text-sm text-slate-400 dark:text-darkMuted line-through flex-1">{t.text} <span className="text-[10px] ml-2 opacity-50">{t.time || '12:00'}</span></span>
-                                                                        <ActionMenu id={t.id} onEdit={() => handleOpenIsland('task', t, date)} onDelete={() => setConfirmDelete({ type: 'task', id: t.id, date })} />
+                                                                        <span className="text-sm text-slate-400 dark:text-darkMuted line-through flex-1">{t.text}</span>
+                                                                        <ActionMenu 
+                                                                            id={t.id}
+                                                                            onEdit={() => handleOpenIsland('task', t, date)}
+                                                                            onDelete={() => setConfirmDelete({ type: 'task', id: t.id, date })}
+                                                                        />
                                                                     </div>
                                                                 ))}
                                                             </div>
@@ -585,14 +565,17 @@
                                                     return (
                                                         <div key={t.id} className="flex flex-col gap-1 group/task relative">
                                                             <div className="flex items-center gap-4">
-                                                                <div onClick={() => toggleTask(date, t.id)} className="w-6 h-6 flex-shrink-0 flex items-center justify-center border-2 border-slate-300 dark:border-darkBorder"></div>
+                                                                <div onClick={() => toggleTask(date, t.id)} className={`w-6 h-6 flex-shrink-0 flex items-center justify-center border-2 border-slate-300 dark:border-darkBorder`}></div>
                                                                 <div className="flex-1 flex flex-row items-baseline gap-2 min-w-0" onClick={() => toggleTask(date, t.id)}>
                                                                     <span className="text-sm truncate text-slate-800 dark:text-darkText font-medium">{t.text}</span>
-                                                                    <span className="text-[10px] text-slate-400 dark:text-darkMuted whitespace-nowrap">{t.time || '12:00'}</span>
+                                                                    {linkedGoal && <span className="flex-shrink-0 text-[8px] font-bold uppercase tracking-[0.05em] px-1.5 py-0.5 rounded border text-slate-400 border-slate-100 dark:text-darkMuted dark:border-darkBorder">{linkedGoal.title}</span>}
                                                                 </div>
-                                                                <div className="flex items-center gap-2">
-                                                                    {linkedGoal && <span className="max-w-[60px] truncate text-[8px] font-bold uppercase tracking-[0.05em] px-1.5 py-0.5 rounded border text-slate-400 border-slate-100 dark:text-darkMuted dark:border-darkBorder">{linkedGoal.title}</span>}
-                                                                    <ActionMenu id={t.id} onEdit={() => handleOpenIsland('task', t, date)} onDelete={() => setConfirmDelete({ type: 'task', id: t.id, date })} />
+                                                                <div className="flex items-center">
+                                                                    <ActionMenu 
+                                                                        id={t.id}
+                                                                        onEdit={() => handleOpenIsland('task', t, date)}
+                                                                        onDelete={() => setConfirmDelete({ type: 'task', id: t.id, date })}
+                                                                    />
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -627,6 +610,7 @@
                             <div className="w-full max-w-sm fade-in bg-white dark:bg-darkCard p-8 border border-slate-100 dark:border-darkBorder shadow-2xl rounded-2xl" onClick={e => e.stopPropagation()}>
                                 <h3 className="text-lg font-light mb-2 dark:text-white">Confirm Delete</h3>
                                 <p className="text-sm text-slate-500 dark:text-darkMuted mb-4">Remove this {confirmDelete.type}?</p>
+                                
                                 {confirmDelete.type === 'objective' && (
                                     <div className="flex items-center gap-3 mb-6 bg-slate-50 dark:bg-darkBorder/30 p-3 rounded-lg">
                                         <input 
@@ -639,6 +623,7 @@
                                         <label htmlFor="deleteAllTasks" className="text-[10px] font-bold uppercase tracking-wider dark:text-darkMuted">Delete linked tasks too</label>
                                     </div>
                                 )}
+
                                 <div className="flex gap-4">
                                     <button onClick={() => confirmDelete.type === 'objective' ? deleteAssignment(confirmDelete.id, deleteLinkedTasks) : deleteTask(confirmDelete.date, confirmDelete.id)} className="flex-1 bg-red-500 text-white py-3 font-bold text-[10px] uppercase tracking-widest rounded-lg">Delete</button>
                                     <button onClick={() => setConfirmDelete(null)} className="flex-1 bg-slate-100 dark:bg-darkBorder py-3 font-bold text-[10px] uppercase tracking-widest dark:text-white rounded-lg">Cancel</button>
@@ -653,4 +638,4 @@
         ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
-</html
+</htm>
