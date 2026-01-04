@@ -37,7 +37,6 @@
         }
         body.dark { background-color: #0a0a0a; color: #f5f5f5; }
         
-        /* Splash Screen & Entry Animation */
         .splash-screen {
             position: fixed;
             inset: 0;
@@ -129,7 +128,6 @@
 
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
-
         const App = () => {
             const getLocalDateString = (date) => {
                 const offset = date.getTimezoneOffset();
@@ -146,21 +144,23 @@
             const [activeTab, setActiveTab] = useState('timeline');
             const [openDoneDropdowns, setOpenDoneDropdowns] = useState({});
             const [openMenuId, setOpenMenuId] = useState(null);
-
+            
             const [assignments, setAssignments] = useState(() => {
-                const saved = localStorage.getItem('school_assignments');
-                return saved ? JSON.parse(saved) : [];
+                try {
+                    const saved = localStorage.getItem('school_assignments');
+                    return saved ? JSON.parse(saved) : [];
+                } catch (e) { return []; }
             });
             const [dailyTasks, setDailyTasks] = useState(() => {
-                const saved = localStorage.getItem('daily_tasks');
-                return saved ? JSON.parse(saved) : {};
+                try {
+                    const saved = localStorage.getItem('daily_tasks');
+                    return saved ? JSON.parse(saved) : {};
+                } catch (e) { return {}; }
             });
-
             const [hideEmptyDays, setHideEmptyDays] = useState(() => {
                 const saved = localStorage.getItem('study_flow_hide_empty');
                 return saved === 'true';
             });
-            
             const [islandVisible, setIslandVisible] = useState(false);
             const [islandType, setIslandType] = useState('task');
             const [modalData, setModalData] = useState({ id: null, title: '', date: '', linkedGoalId: '' });
@@ -180,11 +180,9 @@
             }, []);
 
             useEffect(() => {
-                window.history.pushState({ tab: activeTab }, '');
                 const handlePopState = (event) => {
-                    if (event.state && event.state.tab) {
-                        setActiveTab(event.state.tab);
-                    }
+                    const tab = (event.state && event.state.tab) ? event.state.tab : 'timeline';
+                    setActiveTab(tab);
                 };
                 window.addEventListener('popstate', handlePopState);
                 return () => window.removeEventListener('popstate', handlePopState);
@@ -224,7 +222,6 @@
                     const dStr = getLocalDateString(currentDate);
                     const hasTasks = (dailyTasks[dStr] || []).length > 0;
                     const hasObjectives = assignments.some(a => a.deadline === dStr);
-                    
                     if (!hideEmptyDays || hasTasks || hasObjectives || dStr === todayStr) {
                         dateArray.push(dStr);
                     }
@@ -385,13 +382,10 @@
 
             return (
                 <div className="max-w-xl mx-auto px-6 pt-10 pb-32 w-full relative min-h-screen">
-                    
-                    {/* Splash Screen Overlay */}
                     <div className={`splash-screen bg-white dark:bg-darkBg ${!isLoading ? 'slide-up' : ''}`}>
                         <h1 className="text-2xl font-light tracking-tight text-slate-900 dark:text-darkText">Study Flow</h1>
                     </div>
 
-                    {/* Island Pop-up */}
                     <div className="fixed top-0 left-0 right-0 z-[200] flex justify-center pt-4 px-6 pointer-events-none">
                         <div className={`island-popup w-full max-w-md bg-black dark:bg-[#1a1a1a] shadow-2xl rounded-[32px] p-6 pointer-events-auto ${islandVisible ? 'active' : ''}`}>
                             <div className="flex justify-between items-center mb-6">
@@ -419,7 +413,7 @@
                                     <div className="grid grid-cols-2 gap-6">
                                         <div className="space-y-1">
                                             <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Date</label>
-                                            <input type="date" value={modalData.date} onChange={e => setModalData({...modalData, date: e.target.value})} className={`island-input`} />
+                                            <input type="date" value={modalData.date} onChange={e => setModalData({...modalData, date: e.target.value})} className="island-input" />
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Link Objective</label>
@@ -441,7 +435,6 @@
                         </div>
                     </div>
 
-                    {/* Header - (App name removed) */}
                     <div className="flex justify-between items-start mb-16 mt-6">
                         <div>
                             <div className="mt-2 flex items-center gap-3">
@@ -524,7 +517,9 @@
                                                 </div>
                                                 <div className={`dropdown-enter ${isExpanded ? 'dropdown-active' : ''}`}>
                                                     <div className="mt-2 mb-4 ml-6 space-y-3 border-l-2 border-slate-50 dark:border-darkBorder pl-4">
-                                                        {linkedTasks.length === 0 ? <p className="text-[10px] text-slate-300 dark:text-darkMuted italic py-2">No linked tasks.</p> : linkedTasks.map(t => (
+                                                        {linkedTasks.length === 0 ? (
+                                                            <p className="text-[10px] text-slate-300 dark:text-darkMuted italic py-2">No linked tasks.</p>
+                                                        ) : linkedTasks.map(t => (
                                                             <div key={t.id} className="flex items-center justify-between group/linkitem py-1">
                                                                 <div className="flex flex-col">
                                                                     <span className={`text-xs ${t.done ? 'text-slate-300 dark:text-darkMuted line-through' : 'text-slate-600 dark:text-slate-300 font-medium'}`}>{t.text}</span>
@@ -561,7 +556,6 @@
                                             <div className="flex flex-col gap-2 mb-4 px-2">
                                                 <div className="flex items-center gap-3">
                                                     <span className={`text-[11px] font-bold uppercase tracking-wider whitespace-nowrap ${isActive ? 'text-black dark:text-white underline underline-offset-4' : 'text-slate-600 dark:text-darkMuted'}`}>{isRealToday ? 'Today' : formatDate(date)}</span>
-                                                    
                                                     {dateAssigns.length > 0 && (
                                                         <div className="relative inline-block" onClick={e => e.stopPropagation()}>
                                                             <div className="btn-minimal-trigger">
@@ -635,7 +629,6 @@
                         </section>
                     )}
 
-                    {/* Navigation */}
                     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[150] w-[180px]">
                         <div className="nav-blur border border-slate-200/40 dark:border-white/10 rounded-full h-[60px] flex items-center justify-between px-2 shadow-xl">
                             <button onClick={() => navigateTo('timeline')} className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'timeline' ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg' : 'text-slate-400 dark:text-darkMuted'}`}>
@@ -650,13 +643,11 @@
                         </div>
                     </div>
 
-                    {/* Delete Confirm Modal */}
                     {confirmDelete && (
                         <div className="fixed inset-0 z-[300] bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setConfirmDelete(null)}>
                             <div className="w-full max-w-sm fade-in bg-white dark:bg-darkCard p-8 border border-slate-100 dark:border-darkBorder shadow-2xl rounded-2xl" onClick={e => e.stopPropagation()}>
                                 <h3 className="text-lg font-light mb-2 dark:text-white">Confirm Delete</h3>
                                 <p className="text-sm text-slate-500 dark:text-darkMuted mb-4">Remove this {confirmDelete.type}?</p>
-                                
                                 {confirmDelete.type === 'objective' && (
                                     <div className="flex items-center gap-3 mb-6 bg-slate-50 dark:bg-darkBorder/30 p-3 rounded-lg">
                                         <input 
@@ -669,7 +660,6 @@
                                         <label htmlFor="deleteAllTasks" className="text-[10px] font-bold uppercase tracking-wider dark:text-darkMuted">Delete linked tasks too</label>
                                     </div>
                                 )}
-
                                 <div className="flex gap-4">
                                     <button onClick={() => confirmDelete.type === 'objective' ? deleteAssignment(confirmDelete.id, deleteLinkedTasks) : deleteTask(confirmDelete.date, confirmDelete.id)} className="flex-1 bg-red-500 text-white py-3 font-bold text-[10px] uppercase tracking-widest rounded-lg">Delete</button>
                                     <button onClick={() => setConfirmDelete(null)} className="flex-1 bg-slate-100 dark:bg-darkBorder py-3 font-bold text-[10px] uppercase tracking-widest dark:text-white rounded-lg">Cancel</button>
@@ -684,4 +674,4 @@
         ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
-</html>
+</htm>
