@@ -9,7 +9,7 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        input, select, textarea { font-size: 16px !important; }
+        [span_5](start_span)input, select, textarea { font-size: 16px !important;[span_5](end_span) }
         body { 
             touch-action: manipulation;
             overflow-x: hidden; 
@@ -17,7 +17,7 @@
             position: relative;
             background-color: #ffffff;
             color: #0f172a;
-            -webkit-tap-highlight-color: transparent;
+            -[span_6](start_span)webkit-tap-highlight-color: transparent;[span_6](end_span)
         }
         
         .splash-screen {
@@ -27,20 +27,20 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.8s cubic-bezier(0.85, 0, 0.15, 1);
+            [span_7](start_span)transition: transform 0.8s cubic-bezier(0.85, 0, 0.15, 1);[span_7](end_span)
         }
-        .splash-screen.slide-up { transform: translateY(-100%); }
+        [span_8](start_span).splash-screen.slide-up { transform: translateY(-100%);[span_8](end_span) }
 
         .island-popup {
             transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
             transform: translateY(-120%);
             opacity: 0;
-            pointer-events: none;
+            [span_9](start_span)pointer-events: none;[span_9](end_span)
         }
         .island-popup.active {
             transform: translateY(0);
             opacity: 1;
-            pointer-events: auto;
+            [span_10](start_span)pointer-events: auto;[span_10](end_span)
         }
 
         .island-input {
@@ -53,17 +53,19 @@
             width: 100%;
             border-radius: 0;
             appearance: none;
-            -webkit-appearance: none;
+            -[span_11](start_span)webkit-appearance: none;[span_11](end_span)
         }
-        .island-input:focus { border-color: rgba(255,255,255,0.4); }
+        [span_12](start_span).island-input:focus { border-color: rgba(255,255,255,0.4);[span_12](end_span) }
 
-        .fade-in { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        [span_13](start_span).fade-in { animation: fadeIn 0.4s ease-out;[span_13](end_span) }
+        @keyframes fadeIn { from { opacity: 0; [span_14](start_span)} to { opacity: 1;[span_14](end_span) } }
         
-        .dropdown-enter { max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; }
-        .dropdown-active { max-height: 1000px; opacity: 1; }
+        .dropdown-enter { max-height: 0;
+            [span_15](start_span)opacity: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;[span_15](end_span) }
+        [span_16](start_span).dropdown-active { max-height: 1000px; opacity: 1;[span_16](end_span) }
         
-        .nav-blur { backdrop-filter: blur(12px); background-color: rgba(255, 255, 255, 0.75); }
+        .nav-blur { backdrop-filter: blur(12px);
+            background-color: rgba(255, 255, 255, 0.75); [span_17](start_span)}
         
         .btn-minimal-trigger {
             appearance: none;
@@ -81,14 +83,14 @@
             display: flex;
             align-items: center;
             line-height: 1;
-            transition: all 0.2s ease;
+            transition: all 0.2s ease;[span_17](end_span)
         }
         
         .btn-chevron {
             position: absolute;
             right: 4px;
             top: 50%;
-            transform: translateY(-50%);
+            [span_18](start_span)transform: translateY(-50%);[span_18](end_span)
         }
 
         .native-trigger-overlay {
@@ -98,7 +100,7 @@
             width: 100%;
             height: 100%;
             opacity: 0;
-            cursor: pointer;
+            [span_19](start_span)cursor: pointer;[span_19](end_span)
         }
     </style>
 </head>
@@ -106,79 +108,86 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        [span_20](start_span)const { useState, useEffect, useMemo } = React;[span_20](end_span)
         const App = () => {
             const getLocalDateString = (date) => {
                 const offset = date.getTimezoneOffset();
                 const adjustedDate = new Date(date.getTime() - (offset * 60 * 1000));
-                return adjustedDate.toISOString().split('T')[0];
+                [span_21](start_span)return adjustedDate.toISOString().split('T')[0];[span_21](end_span)
             };
 
             const [isLoading, setIsLoading] = useState(true);
-            const [now] = useState(new Date());
-            const [activeTab, setActiveTab] = useState('timeline');
+            [span_22](start_span)const [now] = useState(new Date());[span_22](end_span)
+            
+            // Fix white screen: Initialize from history state or default to timeline
+            const [activeTab, setActiveTab] = useState(() => {
+                return (window.history.state && window.history.state.tab) ? window.history.state.tab : 'timeline';
+            });
+
             const [openDoneDropdowns, setOpenDoneDropdowns] = useState({});
             const [openMenuId, setOpenMenuId] = useState(null);
             const [assignments, setAssignments] = useState(() => {
                 const saved = localStorage.getItem('school_assignments');
-                return saved ? JSON.parse(saved) : [];
+                [span_23](start_span)return saved ? JSON.parse(saved) : [];[span_23](end_span)
             });
             const [dailyTasks, setDailyTasks] = useState(() => {
                 const saved = localStorage.getItem('daily_tasks');
-                return saved ? JSON.parse(saved) : {};
+                [span_24](start_span)return saved ? JSON.parse(saved) : {};[span_24](end_span)
             });
             const [hideEmptyDays, setHideEmptyDays] = useState(() => {
                 const saved = localStorage.getItem('study_flow_hide_empty');
-                return saved === 'true';
+                [span_25](start_span)return saved === 'true';[span_25](end_span)
             });
             const [islandVisible, setIslandVisible] = useState(false);
             const [islandType, setIslandType] = useState('task');
-            const [modalData, setModalData] = useState({ id: null, title: '', date: '', linkedGoalId: '' });
+            [span_26](start_span)const [modalData, setModalData] = useState({ id: null, title: '', date: '', linkedGoalId: '' });[span_26](end_span)
             const [expandedGoalId, setExpandedGoalId] = useState(null);
             const [confirmDelete, setConfirmDelete] = useState(null);
-            const [deleteLinkedTasks, setDeleteLinkedTasks] = useState(false);
+            [span_27](start_span)const [deleteLinkedTasks, setDeleteLinkedTasks] = useState(false);[span_27](end_span)
 
             useEffect(() => {
                 const timer = setTimeout(() => setIsLoading(false), 1200);
-                return () => clearTimeout(timer);
+                [span_28](start_span)return () => clearTimeout(timer);[span_28](end_span)
             }, []);
 
             useEffect(() => {
                 const handleGlobalClick = () => setOpenMenuId(null);
                 window.addEventListener('click', handleGlobalClick);
-                return () => window.removeEventListener('click', handleGlobalClick);
+                [span_29](start_span)return () => window.removeEventListener('click', handleGlobalClick);[span_29](end_span)
             }, []);
 
             useEffect(() => {
                 const handlePopState = (event) => {
                     if (event.state && event.state.tab) {
                         setActiveTab(event.state.tab);
+                    } else {
+                        setActiveTab('timeline');
                     }
                 };
                 window.addEventListener('popstate', handlePopState);
-                return () => window.removeEventListener('popstate', handlePopState);
+                [span_30](start_span)return () => window.removeEventListener('popstate', handlePopState);[span_30](end_span)
             }, []);
 
             const navigateTo = (tab) => {
                 if (tab !== activeTab) {
                     window.history.pushState({ tab }, '');
-                    setActiveTab(tab);
+                    [span_31](start_span)setActiveTab(tab);[span_31](end_span)
                 }
             };
 
             useEffect(() => { localStorage.setItem('school_assignments', JSON.stringify(assignments)); }, [assignments]);
             useEffect(() => { localStorage.setItem('daily_tasks', JSON.stringify(dailyTasks)); }, [dailyTasks]);
-            useEffect(() => { localStorage.setItem('study_flow_hide_empty', hideEmptyDays); }, [hideEmptyDays]);
+            [span_32](start_span)useEffect(() => { localStorage.setItem('study_flow_hide_empty', hideEmptyDays); }, [hideEmptyDays]);[span_32](end_span)
 
             const todayStr = useMemo(() => getLocalDateString(now), [now]);
-            const [selectedDate, setSelectedDate] = useState(todayStr);
+            [span_33](start_span)const [selectedDate, setSelectedDate] = useState(todayStr);[span_33](end_span)
 
             const timelineDates = useMemo(() => {
                 const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 let endDate = new Date(start);
                 if (assignments.length > 0) {
                     const dates = assignments.map(a => new Date(a.deadline + 'T00:00:00'));
-                    endDate = new Date(Math.max(...dates));
+                    [span_34](start_span)endDate = new Date(Math.max(...dates));[span_34](end_span)
                 } else {
                     endDate.setDate(endDate.getDate() + 7);
                 }
@@ -187,11 +196,11 @@
                 while (currentDate <= endDate) {
                     const dStr = getLocalDateString(currentDate);
                     const hasTasks = (dailyTasks[dStr] || []).length > 0;
-                    const hasObjectives = assignments.some(a => a.deadline === dStr);
+                    [span_35](start_span)const hasObjectives = assignments.some(a => a.deadline === dStr);[span_35](end_span)
                     if (!hideEmptyDays || hasTasks || hasObjectives || dStr === todayStr) {
                         dateArray.push(dStr);
                     }
-                    currentDate.setDate(currentDate.getDate() + 1);
+                    [span_36](start_span)currentDate.setDate(currentDate.getDate() + 1);[span_36](end_span)
                 }
                 return dateArray;
             }, [assignments, dailyTasks, now, hideEmptyDays, todayStr]);
@@ -204,24 +213,29 @@
                         title: existingItem.title || existingItem.text, 
                         date: dateContext || existingItem.deadline || existingItem.date, 
                         linkedGoalId: existingItem.linkedGoalId || '' 
-                    });
+                    [span_37](start_span)});[span_37](end_span)
                 } else {
-                    setModalData({ id: null, title: '', date: todayStr, linkedGoalId: '' });
+                    [span_38](start_span)setModalData({ id: null, title: '', date: todayStr, linkedGoalId: '' });[span_38](end_span)
                 }
                 setIslandVisible(true);
             };
 
             const handleIslandSubmit = (e) => {
                 e.preventDefault();
-                if (!modalData.title || !modalData.date) return;
+                // Fix: Validation for missing title
+                if (!modalData.title.trim()) {
+                    alert("Title required");
+                    return;
+                }
+                [span_39](start_span)if (!modalData.date) return;[span_39](end_span)
 
                 if (islandType === 'goal') {
                     if (modalData.id) {
                         setAssignments(assignments.map(a => a.id === modalData.id ? { ...a, title: modalData.title, deadline: modalData.date } : a)
-                            .sort((a, b) => new Date(a.deadline) - new Date(b.deadline)));
+                            [span_40](start_span).sort((a, b) => new Date(a.deadline) - new Date(b.deadline)));[span_40](end_span)
                     } else {
                         setAssignments([...assignments, { id: Date.now(), title: modalData.title, deadline: modalData.date }]
-                            .sort((a, b) => new Date(a.deadline) - new Date(b.deadline)));
+                            [span_41](start_span).sort((a, b) => new Date(a.deadline) - new Date(b.deadline)));[span_41](end_span)
                     }
                 } else {
                     if (modalData.id) {
@@ -229,10 +243,10 @@
                             const updated = { ...prev };
                             Object.keys(updated).forEach(d => {
                                 updated[d] = updated[d].filter(t => t.id !== modalData.id);
-                            });
+                            [span_42](start_span)});[span_42](end_span)
                             const newTask = { id: modalData.id, text: modalData.title, done: false, linkedGoalId: modalData.linkedGoalId ? Number(modalData.linkedGoalId) : null };
                             updated[modalData.date] = [...(updated[modalData.date] || []), newTask];
-                            return updated;
+                            [span_43](start_span)return updated;[span_43](end_span)
                         });
                     } else {
                         const newTask = { 
@@ -240,21 +254,21 @@
                             text: modalData.title, 
                             done: false, 
                             linkedGoalId: modalData.linkedGoalId ? Number(modalData.linkedGoalId) : null 
-                        };
+                        [span_44](start_span)};[span_44](end_span)
                         setDailyTasks(prev => ({
                             ...prev,
                             [modalData.date]: [...(prev[modalData.date] || []), newTask]
                         }));
                     }
                 }
-                setIslandVisible(false);
+                [span_45](start_span)setIslandVisible(false);[span_45](end_span)
             };
 
             const linkTaskToGoal = (date, taskId, goalId) => {
                 setDailyTasks(prev => ({
                     ...prev,
                     [date]: (prev[date] || []).map(x => x.id === taskId ? {...x, linkedGoalId: goalId} : x)
-                }));
+                [span_46](start_span)}));[span_46](end_span)
             };
 
             const getLinkedTasksForGoal = (goalId) => {
@@ -263,20 +277,20 @@
                     (dailyTasks[date] || []).forEach(task => {
                         if (task.linkedGoalId === goalId) linked.push({ ...task, date });
                     });
-                });
+                [span_47](start_span)});[span_47](end_span)
                 return linked;
             };
 
             const deleteAssignment = (id, removeTasks) => {
                 setAssignments(assignments.filter(a => a.id !== id));
-                const updatedDailyTasks = { ...dailyTasks };
+                [span_48](start_span)const updatedDailyTasks = { ...dailyTasks };[span_48](end_span)
                 Object.keys(updatedDailyTasks).forEach(date => {
                     if (removeTasks) {
                         updatedDailyTasks[date] = updatedDailyTasks[date].filter(task => task.linkedGoalId !== id);
                     } else {
                         updatedDailyTasks[date] = updatedDailyTasks[date].map(task => 
                             task.linkedGoalId === id ? { ...task, linkedGoalId: null } : task
-                        );
+                        [span_49](start_span));[span_49](end_span)
                     }
                 });
                 setDailyTasks(updatedDailyTasks);
@@ -287,34 +301,34 @@
             const toggleTask = (date, taskId) => {
                 setDailyTasks(prev => {
                     const updated = (prev[date] || []).map(x => x.id === taskId ? {...x, done: !x.done} : x);
-                    return {...prev, [date]: updated};
+                    [span_50](start_span)return {...prev, [date]: updated};[span_50](end_span)
                 });
             };
 
             const deleteTask = (date, taskId) => {
                 setDailyTasks({...dailyTasks, [date]: (dailyTasks[date] || []).filter(x => x.id !== taskId)});
-                setConfirmDelete(null);
+                [span_51](start_span)setConfirmDelete(null);[span_51](end_span)
             };
 
             const toggleDoneDropdown = (date) => {
-                setOpenDoneDropdowns(prev => ({ ...prev, [date]: !prev[date] }));
+                [span_52](start_span)setOpenDoneDropdowns(prev => ({ ...prev, [date]: !prev[date] }));[span_52](end_span)
             };
 
             const getDaysRemaining = (deadline) => {
                 const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                const target = new Date(deadline + 'T00:00:00');
+                [span_53](start_span)const target = new Date(deadline + 'T00:00:00');[span_53](end_span)
                 const days = Math.round((target - today) / (1000 * 60 * 60 * 24));
-                return days < 0 ? "Past due" : (days === 0 ? "Due Today" : (days === 1 ? "Due Tomorrow" : `${days} days left`));
+                return days < 0 ? [span_54](start_span)"Past due" : (days === 0 ? "Due Today" : (days === 1 ? "Due Tomorrow" : `${days} days left`));[span_54](end_span)
             };
 
             const formatDate = (dateStr) => {
                 const [y, m, d] = dateStr.split('-').map(Number);
-                return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+                [span_55](start_span)return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });[span_55](end_span)
             };
 
             const todayCompletionRate = useMemo(() => {
                 const tasks = dailyTasks[todayStr] || [];
-                return tasks.length === 0 ? 0 : Math.round((tasks.filter(t => t.done).length / tasks.length) * 100);
+                [span_56](start_span)return tasks.length === 0 ? 0 : Math.round((tasks.filter(t => t.done).length / tasks.length) * 100);[span_56](end_span)
             }, [dailyTasks, todayStr]);
 
             const ActionMenu = ({ onEdit, onDelete, id }) => {
@@ -326,38 +340,38 @@
                             className="p-2 text-slate-300 hover:text-black transition-colors"
                         >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-                        </button>
+                        [span_57](start_span)</button>[span_57](end_span)
                         {isOpen && (
                             <div className="absolute right-0 top-8 z-[200] bg-white border border-slate-100 shadow-xl rounded-xl overflow-hidden min-w-[100px] fade-in">
                                 <button onClick={() => { onEdit(); setOpenMenuId(null); }} className="w-full text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 flex items-center gap-2">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                                    Edit
+                                    [span_58](start_span)Edit[span_58](end_span)
                                 </button>
                                 <button onClick={() => { onDelete(); setOpenMenuId(null); }} className="w-full text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50 flex items-center gap-2 border-t border-slate-50">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                    Delete
+                                    [span_59](start_span)Delete[span_59](end_span)
                                 </button>
                             </div>
                         )}
                     </div>
-                );
+                [span_60](start_span));[span_60](end_span)
             };
 
             return (
                 <div className="max-w-xl mx-auto px-6 pt-10 pb-32 w-full relative min-h-screen">
                     <div className={`splash-screen bg-white ${!isLoading ? 'slide-up' : ''}`}>
                         <h1 className="text-2xl font-light tracking-tight text-slate-900">Study Flow</h1>
-                    </div>
+                    [span_61](start_span)</div>[span_61](end_span)
 
                     <div className="fixed top-0 left-0 right-0 z-[200] flex justify-center pt-4 px-6 pointer-events-none">
                         <div className={`island-popup w-full max-w-md bg-black shadow-2xl rounded-[32px] p-6 pointer-events-auto ${islandVisible ? 'active' : ''}`}>
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-white text-[10px] font-black uppercase tracking-[0.2em]">
                                     {modalData.id ? 'Edit ' : 'Add '} {islandType === 'goal' ? 'Objective' : 'Task'}
-                                </h3>
+                                [span_62](start_span)</h3>[span_62](end_span)
                                 <button onClick={() => setIslandVisible(false)} className="text-white/30 hover:text-white p-1">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                </button>
+                                [span_63](start_span)</button>[span_63](end_span)
                             </div>
                             <form onSubmit={handleIslandSubmit} className="space-y-6">
                                 <input 
@@ -366,17 +380,17 @@
                                     onChange={e => setModalData({...modalData, title: e.target.value})} 
                                     placeholder="Title..." 
                                     className="w-full bg-transparent border-b border-white/10 py-2 outline-none text-white text-lg placeholder:text-white/20 focus:border-white/40 transition-colors" 
-                                />
+                                [span_64](start_span)/>[span_64](end_span)
                                 {islandType === 'goal' ? (
                                     <div className="space-y-1 w-full">
                                         <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Deadline Date</label>
-                                        <input type="date" value={modalData.date} onChange={e => setModalData({...modalData, date: e.target.value})} className="island-input" />
+                                        [span_65](start_span)<input type="date" value={modalData.date} onChange={e => setModalData({...modalData, date: e.target.value})} className="island-input" />[span_65](end_span)
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-2 gap-6">
                                         <div className="space-y-1">
                                             <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Date</label>
-                                            <input type="date" value={modalData.date} onChange={e => setModalData({...modalData, date: e.target.value})} className="island-input" />
+                                            [span_66](start_span)<input type="date" value={modalData.date} onChange={e => setModalData({...modalData, date: e.target.value})} className="island-input" />[span_66](end_span)
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Link Objective</label>
@@ -384,16 +398,16 @@
                                                 value={modalData.linkedGoalId} 
                                                 onChange={e => setModalData({...modalData, linkedGoalId: e.target.value})}
                                                 className="island-input"
-                                            >
+                                            > [span_67](start_span)
                                                 <option value="" className="text-black">None</option>
                                                 {assignments.map(a => <option key={a.id} value={a.id} className="text-black">{a.title}</option>)}
-                                            </select>
+                                            </select>[span_67](end_span)
                                         </div>
                                     </div>
                                 )}
                                 <button type="submit" className="w-full bg-white text-black py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] active:scale-95 transition-transform">
                                     {modalData.id ? 'Update Entry' : 'Save Entry'}
-                                </button>
+                                [span_68](start_span)</button>[span_68](end_span)
                             </form>
                         </div>
                     </div>
@@ -403,7 +417,7 @@
                             <div className="mt-2 flex items-center gap-3">
                                 <div className="w-24 h-1 bg-slate-100 rounded-full overflow-hidden">
                                     <div className="h-full bg-black transition-all duration-500" style={{width: `${todayCompletionRate}%`}}></div>
-                                </div>
+                                [span_69](start_span)</div>[span_69](end_span)
                                 <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Today: {todayCompletionRate}%</span>
                             </div>
                         </div>
@@ -411,9 +425,9 @@
                             <button 
                                 onClick={() => handleOpenIsland(activeTab === 'timeline' ? 'task' : 'goal')}
                                 className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-black hover:border-black transition-all active:scale-90"
-                            >
+                            > [span_70](start_span)
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                            </button>
+                            </button>[span_70](end_span)
                         )}
                     </div>
 
@@ -424,17 +438,17 @@
                                 <div className="flex items-center justify-between py-4 border-b border-slate-50">
                                     <div>
                                         <h3 className="text-sm font-semibold">Concise Timeline</h3>
-                                        <p className="text-[11px] text-slate-400">Hide days without tasks or objectives</p>
+                                        [span_71](start_span)<p className="text-[11px] text-slate-400">Hide days without tasks or objectives</p>[span_71](end_span)
                                     </div>
                                     <button 
                                         onClick={() => setHideEmptyDays(!hideEmptyDays)} 
                                         className={`w-12 h-6 rounded-full transition-colors relative ${hideEmptyDays ? 'bg-black' : 'bg-slate-200'}`}
-                                    >
+                                    > [span_72](start_span)
                                         <div className={`absolute top-1 w-4 h-4 rounded-full transition-all ${hideEmptyDays ? 'left-7 bg-white' : 'left-1 bg-white'}`}></div>
-                                    </button>
+                                    </button>[span_72](end_span)
                                 </div>
                                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-300 text-center pt-4">Simplified Light Mode Only</p>
-                            </div>
+                            [span_73](start_span)</div>[span_73](end_span)
                         </section>
                     )}
 
@@ -442,45 +456,45 @@
                         <section className="fade-in">
                             <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-6 border-b border-slate-100 pb-2">Active Objectives</h2>
                             {assignments.length === 0 ? <p className="text-xs text-slate-400 italic font-medium">No active goals.</p> : (
-                                <div className="space-y-4">
+                                [span_74](start_span)<div className="space-y-4">[span_74](end_span)
                                     {assignments.map(a => {
                                         const linkedTasks = getLinkedTasksForGoal(a.id);
                                         const doneCount = linkedTasks.filter(t => t.done).length;
-                                        const isExpanded = expandedGoalId === a.id;
+                                        [span_75](start_span)const isExpanded = expandedGoalId === a.id;[span_75](end_span)
                                         return (
                                             <div key={a.id} className="border-b border-slate-50 pb-2 last:border-0">
                                                 <div onClick={() => setExpandedGoalId(isExpanded ? null : a.id)} className="flex justify-between items-center group cursor-pointer py-2">
-                                                    <div className="flex items-center gap-3">
+                                                    [span_76](start_span)<div className="flex items-center gap-3">[span_76](end_span)
                                                         <svg className={`text-slate-300 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-black' : ''}`} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"></polyline></svg>
                                                         <div className="flex flex-col">
-                                                            <div className="flex items-center gap-2">
+                                                            [span_77](start_span)<div className="flex items-center gap-2">[span_77](end_span)
                                                                 <span className={`text-sm font-semibold ${isExpanded ? 'text-black' : 'text-slate-900'}`}>{a.title}</span>
-                                                                <span className="text-[9px] font-black bg-slate-100 text-slate-400 px-1.5 rounded-full">{doneCount}/{linkedTasks.length}</span>
+                                                                [span_78](start_span)<span className="text-[9px] font-black bg-slate-100 text-slate-400 px-1.5 rounded-full">{doneCount}/{linkedTasks.length}</span>[span_78](end_span)
                                                             </div>
                                                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">{getDaysRemaining(a.deadline)}</span>
-                                                        </div>
+                                                        [span_79](start_span)</div>[span_79](end_span)
                                                     </div>
                                                     <ActionMenu id={a.id} onEdit={() => handleOpenIsland('goal', a)} onDelete={() => setConfirmDelete({ type: 'objective', id: a.id })} />
-                                                </div>
+                                                [span_80](start_span)</div>[span_80](end_span)
                                                 <div className={`dropdown-enter ${isExpanded ? 'dropdown-active' : ''}`}>
-                                                    <div className="mt-2 mb-4 ml-6 space-y-3 border-l-2 border-slate-50 pl-4">
+                                                    [span_81](start_span)<div className="mt-2 mb-4 ml-6 space-y-3 border-l-2 border-slate-50 pl-4">[span_81](end_span)
                                                         {linkedTasks.length === 0 ? (
-                                                            <p className="text-[10px] text-slate-300 italic py-2">No linked tasks.</p>
+                                                            [span_82](start_span)<p className="text-[10px] text-slate-300 italic py-2">No linked tasks.</p>[span_82](end_span)
                                                         ) : linkedTasks.map(t => (
                                                             <div key={t.id} className="flex items-center justify-between group/linkitem py-1">
-                                                                <div className="flex flex-col">
+                                                                [span_83](start_span)<div className="flex flex-col">[span_83](end_span)
                                                                     <span className={`text-xs ${t.done ? 'text-slate-300 line-through' : 'text-slate-600 font-medium'}`}>{t.text}</span>
-                                                                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tight">{formatDate(t.date)}</span>
+                                                                    [span_84](start_span)<span className="text-[8px] font-bold text-slate-400 uppercase tracking-tight">{formatDate(t.date)}</span>[span_84](end_span)
                                                                 </div>
                                                                 <button onClick={() => linkTaskToGoal(t.date, t.id, null)} className="opacity-0 group-hover/linkitem:opacity-100 text-[10px] font-black text-red-500 uppercase tracking-tighter">Unlink</button>
-                                                            </div>
+                                                            [span_85](start_span)</div>[span_85](end_span)
                                                         ))}
                                                     </div>
-                                                </div>
+                                                [span_86](start_span)</div>[span_86](end_span)
                                             </div>
                                         );
                                     })}
-                                </div>
+                                [span_87](start_span)</div>[span_87](end_span)
                             )}
                         </section>
                     )}
@@ -488,125 +502,130 @@
                     {activeTab === 'timeline' && (
                         <section className="fade-in">
                             <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-6 border-b border-slate-100 pb-2">Timeline</h2>
-                            <div className="space-y-px">
+                            [span_88](start_span)<div className="space-y-px">[span_88](end_span)
                                 {timelineDates.map(date => {
                                     const dateAssigns = assignments.filter(a => a.deadline === date);
                                     const allTasks = dailyTasks[date] || [];
                                     const activeTasks = allTasks.filter(t => !t.done);
-                                    const doneTasks = allTasks.filter(t => t.done);
+                                    [span_89](start_span)const doneTasks = allTasks.filter(t => t.done);[span_89](end_span)
                                     const isActive = selectedDate === date;
                                     const isRealToday = date === todayStr;
-                                    const isDoneOpen = !!openDoneDropdowns[date];
+                                    [span_90](start_span)const isDoneOpen = !!openDoneDropdowns[date];[span_90](end_span)
 
                                     return (
                                         <div key={date} onClick={() => setSelectedDate(date)} className={`py-6 border-b border-slate-100 transition-all ${!isActive && !isRealToday && allTasks.length === 0 && dateAssigns.length === 0 ? 'opacity-40 grayscale' : ''}`}>
-                                            <div className="flex flex-col gap-2 mb-4 px-2">
+                                            [span_91](start_span)<div className="flex flex-col gap-2 mb-4 px-2">[span_91](end_span)
                                                 <div className="flex items-center gap-3">
-                                                    <span className={`text-[11px] font-bold uppercase tracking-wider whitespace-nowrap ${isActive ? 'text-black underline underline-offset-4' : 'text-slate-600'}`}>{isRealToday ? 'Today' : formatDate(date)}</span>
+                                                    <span className={`text-[11px] font-bold uppercase tracking-wider whitespace-nowrap ${isActive ? 'text-black underline underline-offset-4' : 'text-slate-600'}`}>{isRealToday ? [span_92](start_span)'Today' : formatDate(date)}</span>[span_92](end_span)
                                                     {dateAssigns.length > 0 && (
                                                         <div className="relative inline-block" onClick={e => e.stopPropagation()}>
-                                                            <div className="btn-minimal-trigger">
+                                                            [span_93](start_span)<div className="btn-minimal-trigger">[span_93](end_span)
                                                                 {dateAssigns.length} {dateAssigns.length === 1 ? 'Objective' : 'Objectives'}
-                                                                <svg className="btn-chevron" width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                                                [span_94](start_span)<svg className="btn-chevron" width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="6 9 12 15 18 9"></polyline></svg>[span_94](end_span)
                                                                 <select className="native-trigger-overlay">
-                                                                    <option disabled selected>{dateAssigns.length} Objectives</option>
+                                                                    [span_95](start_span)<option disabled selected>{dateAssigns.length} Objectives</option>[span_95](end_span)
                                                                     {dateAssigns.map(a => (<option key={a.id}>{a.title}</option>))}
-                                                                </select>
+                                                                [span_96](start_span)</select>[span_96](end_span)
                                                             </div>
                                                         </div>
-                                                    )}
+                                                    [span_97](start_span))}[span_97](end_span)
                                                 </div>
                                             </div>
-                                            <div className="space-y-4 px-2">
+                                            [span_98](start_span)<div className="space-y-4 px-2">[span_98](end_span)
                                                 {doneTasks.length > 0 && (
                                                     <div className="mb-2">
-                                                        <button onClick={(e) => { e.stopPropagation(); toggleDoneDropdown(date); }} className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors">
+                                                        [span_99](start_span)<button onClick={(e) => { e.stopPropagation(); toggleDoneDropdown(date); }} className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors">[span_99](end_span)
                                                             <svg className={`transition-transform duration-200 ${isDoneOpen ? 'rotate-90' : ''}`} width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="9 18 15 12 9 6"></polyline></svg>
                                                             Completed ({doneTasks.length})
-                                                        </button>
+                                                        [span_100](start_span)</button>[span_100](end_span)
                                                         <div className={`dropdown-enter ${isDoneOpen ? 'dropdown-active' : ''}`}>
-                                                            <div className="pt-3 space-y-3 pb-2">
+                                                            [span_101](start_span)<div className="pt-3 space-y-3 pb-2">[span_101](end_span)
                                                                 {doneTasks.map(t => (
-                                                                    <div key={t.id} className="flex items-center gap-4 opacity-60 group">
+                                                                    [span_102](start_span)<div key={t.id} className="flex items-center gap-4 opacity-60 group">[span_102](end_span)
                                                                         <div onClick={() => toggleTask(date, t.id)} className="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-black">
-                                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                                            [span_103](start_span)<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><polyline points="20 6 9 17 4 12"></polyline></svg>[span_103](end_span)
                                                                         </div>
-                                                                        <span className="text-sm text-slate-400 line-through flex-1">{t.text}</span>
+                                                                        [span_104](start_span)<span className="text-sm text-slate-400 line-through flex-1">{t.text}</span>[span_104](end_span)
                                                                         <ActionMenu id={t.id} onEdit={() => handleOpenIsland('task', t, date)} onDelete={() => setConfirmDelete({ type: 'task', id: t.id, date })} />
-                                                                    </div>
+                                                                    [span_105](start_span)</div>[span_105](end_span)
                                                                 ))}
                                                             </div>
-                                                        </div>
+                                                        [span_106](start_span)</div>[span_106](end_span)
                                                     </div>
                                                 )}
                                                 {activeTasks.map(t => {
-                                                    const linkedGoal = assignments.find(a => a.id === t.linkedGoalId);
+                                                    [span_107](start_span)const linkedGoal = assignments.find(a => a.id === t.linkedGoalId);[span_107](end_span)
                                                     return (
-                                                        <div key={t.id} className="flex flex-col gap-1 group/task relative">
+                                                        [span_108](start_span)<div key={t.id} className="flex flex-col gap-1 group/task relative">[span_108](end_span)
                                                             <div className="flex items-center gap-4">
-                                                                <div onClick={() => toggleTask(date, t.id)} className="w-6 h-6 flex-shrink-0 flex items-center justify-center border-2 border-slate-300"></div>
+                                                                [span_109](start_span)<div onClick={() => toggleTask(date, t.id)} className="w-6 h-6 flex-shrink-0 flex items-center justify-center border-2 border-slate-300"></div>[span_109](end_span)
+                                                                {/* flex-1 allows text to grow; linked goal tag is ml-auto to sit right */}
                                                                 <div className="flex-1 flex flex-row items-baseline gap-2 min-w-0" onClick={() => toggleTask(date, t.id)}>
-                                                                    <span className="text-sm truncate text-slate-800 font-medium">{t.text}</span>
-                                                                    {linkedGoal && <span className="flex-shrink-0 text-[8px] font-bold uppercase tracking-[0.05em] px-1.5 py-0.5 rounded border text-slate-400 border-slate-100">{linkedGoal.title}</span>}
+                                                                    [span_110](start_span)<span className="text-sm truncate text-slate-800 font-medium">{t.text}</span>[span_110](end_span)
+                                                                    {linkedGoal && (
+                                                                        <span className="ml-auto flex-shrink-0 text-[8px] font-bold uppercase tracking-[0.05em] px-1.5 py-0.5 rounded border text-slate-400 border-slate-100">
+                                                                            {linkedGoal.title}
+                                                                        </span>
+                                                                    [span_111](start_span))}[span_111](end_span)
                                                                 </div>
                                                                 <div className="flex items-center">
-                                                                    <ActionMenu id={t.id} onEdit={() => handleOpenIsland('task', t, date)} onDelete={() => setConfirmDelete({ type: 'task', id: t.id, date })} />
+                                                                    [span_112](start_span)<ActionMenu id={t.id} onEdit={() => handleOpenIsland('task', t, date)} onDelete={() => setConfirmDelete({ type: 'task', id: t.id, date })} />[span_112](end_span)
                                                                 </div>
                                                             </div>
-                                                        </div>
+                                                        [span_113](start_span)</div>[span_113](end_span)
                                                     );
-                                                })}
+                                                [span_114](start_span)})}[span_114](end_span)
                                             </div>
                                         </div>
-                                    );
+                                    [span_115](start_span));[span_115](end_span)
                                 })}
                             </div>
                         </section>
                     )}
 
                     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[150] w-[180px]">
-                        <div className="nav-blur border border-slate-200/40 rounded-full h-[60px] flex items-center justify-between px-2 shadow-xl">
+                        [span_116](start_span)<div className="nav-blur border border-slate-200/40 rounded-full h-[60px] flex items-center justify-between px-2 shadow-xl">[span_116](end_span)
                             <button onClick={() => navigateTo('timeline')} className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'timeline' ? 'bg-black text-white shadow-lg' : 'text-slate-400'}`}>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                            </button>
+                            [span_117](start_span)</button>[span_117](end_span)
                             <button onClick={() => navigateTo('objectives')} className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'objectives' ? 'bg-black text-white shadow-lg' : 'text-slate-400'}`}>
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                            </button>
+                            [span_118](start_span)</button>[span_118](end_span)
                             <button onClick={() => navigateTo('settings')} className={`w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'settings' ? 'bg-black text-white shadow-lg' : 'text-slate-400'}`}>
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                            </button>
+                            [span_119](start_span)</button>[span_119](end_span)
                         </div>
                     </div>
 
                     {confirmDelete && (
                         <div className="fixed inset-0 z-[300] bg-white/80 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setConfirmDelete(null)}>
                             <div className="w-full max-w-sm fade-in bg-white p-8 border border-slate-100 shadow-2xl rounded-2xl" onClick={e => e.stopPropagation()}>
-                                <h3 className="text-lg font-light mb-2">Confirm Delete</h3>
+                                [span_120](start_span)<h3 className="text-lg font-light mb-2">Confirm Delete</h3>[span_120](end_span)
                                 <p className="text-sm text-slate-500 mb-4">Remove this {confirmDelete.type}?</p>
                                 {confirmDelete.type === 'objective' && (
-                                    <div className="flex items-center gap-3 mb-6 bg-slate-50 p-3 rounded-lg">
+                                    [span_121](start_span)<div className="flex items-center gap-3 mb-6 bg-slate-50 p-3 rounded-lg">[span_121](end_span)
                                         <input 
                                             type="checkbox" 
                                             id="deleteAllTasks" 
                                             checked={deleteLinkedTasks} 
                                             onChange={(e) => setDeleteLinkedTasks(e.target.checked)}
                                             className="w-4 h-4 accent-black"
-                                        />
-                                        <label htmlFor="deleteAllTasks" className="text-[10px] font-bold uppercase tracking-wider">Delete linked tasks too</label>
+                                        [span_122](start_span)/>[span_122](end_span)
+                                        [span_123](start_span)<label htmlFor="deleteAllTasks" className="text-[10px] font-bold uppercase tracking-wider">Delete linked tasks too</label>[span_123](end_span)
                                     </div>
                                 )}
-                                <div className="flex gap-4">
-                                    <button onClick={() => confirmDelete.type === 'objective' ? deleteAssignment(confirmDelete.id, deleteLinkedTasks) : deleteTask(confirmDelete.date, confirmDelete.id)} className="flex-1 bg-red-500 text-white py-3 font-bold text-[10px] uppercase tracking-widest rounded-lg">Delete</button>
-                                    <button onClick={() => setConfirmDelete(null)} className="flex-1 bg-slate-100 py-3 font-bold text-[10px] uppercase tracking-widest rounded-lg">Cancel</button>
+                                [span_124](start_span)<div className="flex gap-4">[span_124](end_span)
+                                    [span_125](start_span)<button onClick={() => confirmDelete.type === 'objective' ? deleteAssignment(confirmDelete.id, deleteLinkedTasks) : deleteTask(confirmDelete.date, confirmDelete.id)} className="flex-1 bg-red-500 text-white py-3 font-bold text-[10px] uppercase tracking-widest rounded-lg">Delete</button>[span_125](end_span)
+                                    [span_126](start_span)<button onClick={() => setConfirmDelete(null)} className="flex-1 bg-slate-100 py-3 font-bold text-[10px] uppercase tracking-widest rounded-lg">Cancel</button>[span_126](end_span)
                                 </div>
                             </div>
                         </div>
                     )}
                 </div>
             );
-        };
+        [span_127](start_span)};[span_127](end_span)
 
         ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
-</html
+</html>
