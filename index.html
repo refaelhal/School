@@ -156,8 +156,19 @@
                 return saved ? JSON.parse(saved) : {};
             });
 
+            const [hideEmptyDays, setHideEmptyDays] = useState(() => {
+                const saved = localStorage.getItem('study_flow_hide_empty');
+                return saved === 'true';
+            });
+            
+            const [islandVisible, setIslandVisible] = useState(false);
+            const [islandType, setIslandType] = useState('task');
+            const [modalData, setModalData] = useState({ id: null, title: '', date: '', linkedGoalId: '' });
+            const [expandedGoalId, setExpandedGoalId] = useState(null);
+            const [confirmDelete, setConfirmDelete] = useState(null);
+            const [deleteLinkedTasks, setDeleteLinkedTasks] = useState(false);
+
             useEffect(() => {
-                // Simulate loading time for splash screen
                 const timer = setTimeout(() => setIsLoading(false), 1200);
                 return () => clearTimeout(timer);
             }, []);
@@ -193,6 +204,7 @@
 
             useEffect(() => { localStorage.setItem('school_assignments', JSON.stringify(assignments)); }, [assignments]);
             useEffect(() => { localStorage.setItem('daily_tasks', JSON.stringify(dailyTasks)); }, [dailyTasks]);
+            useEffect(() => { localStorage.setItem('study_flow_hide_empty', hideEmptyDays); }, [hideEmptyDays]);
 
             const todayStr = useMemo(() => getLocalDateString(now), [now]);
             const [selectedDate, setSelectedDate] = useState(todayStr);
@@ -209,11 +221,17 @@
                 const dateArray = [];
                 let currentDate = new Date(start);
                 while (currentDate <= endDate) {
-                    dateArray.push(getLocalDateString(currentDate));
+                    const dStr = getLocalDateString(currentDate);
+                    const hasTasks = (dailyTasks[dStr] || []).length > 0;
+                    const hasObjectives = assignments.some(a => a.deadline === dStr);
+                    
+                    if (!hideEmptyDays || hasTasks || hasObjectives || dStr === todayStr) {
+                        dateArray.push(dStr);
+                    }
                     currentDate.setDate(currentDate.getDate() + 1);
                 }
                 return dateArray;
-            }, [assignments, now]);
+            }, [assignments, dailyTasks, now, hideEmptyDays, todayStr]);
 
             const handleOpenIsland = (type, existingItem = null, dateContext = null) => {
                 setIslandType(type);
@@ -365,12 +383,6 @@
                 );
             };
 
-            const [islandVisible, setIslandVisible] = useState(false);
-            const [islandType, setIslandType] = useState('task');
-            const [modalData, setModalData] = useState({ id: null, title: '', date: '', linkedGoalId: '' });
-            const [confirmDelete, setConfirmDelete] = useState(null);
-            const [deleteLinkedTasks, setDeleteLinkedTasks] = useState(false);
-
             return (
                 <div className="max-w-xl mx-auto px-6 pt-10 pb-32 w-full relative min-h-screen">
                     
@@ -429,10 +441,9 @@
                         </div>
                     </div>
 
-                    {/* Header */}
+                    {/* Header - (App name removed) */}
                     <div className="flex justify-between items-start mb-16 mt-6">
                         <div>
-                            {/* App name removed from here */}
                             <div className="mt-2 flex items-center gap-3">
                                 <div className="w-24 h-1 bg-slate-100 dark:bg-darkBorder rounded-full overflow-hidden">
                                     <div className="h-full bg-black dark:bg-white transition-all duration-500" style={{width: `${todayCompletionRate}%`}}></div>
@@ -465,6 +476,18 @@
                                         ) : (
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-500"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
                                         )}
+                                    </button>
+                                </div>
+                                <div className="flex items-center justify-between py-4 border-b border-slate-50 dark:border-darkBorder">
+                                    <div>
+                                        <h3 className="text-sm font-semibold dark:text-white">Concise Timeline</h3>
+                                        <p className="text-[11px] text-slate-400 dark:text-darkMuted">Hide days without tasks or objectives</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => setHideEmptyDays(!hideEmptyDays)} 
+                                        className={`w-12 h-6 rounded-full transition-colors relative ${hideEmptyDays ? 'bg-black dark:bg-white' : 'bg-slate-200 dark:bg-darkBorder'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 rounded-full transition-all ${hideEmptyDays ? 'left-7 bg-white dark:bg-black' : 'left-1 bg-white dark:bg-slate-400'}`}></div>
                                     </button>
                                 </div>
                             </div>
