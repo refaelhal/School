@@ -66,15 +66,11 @@
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
-        .dropdown-enter { max-height: 0;
-            opacity: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
-        }
+        .dropdown-enter { max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; }
         .dropdown-active { max-height: 1000px; opacity: 1; }
         
-        .nav-blur { backdrop-filter: blur(12px);
-            background-color: rgba(255, 255, 255, 0.75); }
-        .dark .nav-blur { background-color: rgba(20, 20, 20, 0.75);
-            border-color: rgba(255, 255, 255, 0.1); }
+        .nav-blur { backdrop-filter: blur(12px); background-color: rgba(255, 255, 255, 0.75); }
+        .dark .nav-blur { background-color: rgba(20, 20, 20, 0.75); border-color: rgba(255, 255, 255, 0.1); }
         
         .btn-minimal-trigger {
             appearance: none;
@@ -144,7 +140,7 @@
             });
             const [islandVisible, setIslandVisible] = useState(false);
             const [islandType, setIslandType] = useState('task');
-            const [modalData, setModalData] = useState({ id: null, title: '', date: '', linkedGoalId: '' });
+            const [modalData, setModalData] = useState({ id: null, title: '', date: '', time: '', linkedGoalId: '' });
             const [linkingContext, setLinkingContext] = useState(null);
             const [expandedGoalId, setExpandedGoalId] = useState(null);
             const [confirmDelete, setConfirmDelete] = useState(null);
@@ -210,10 +206,11 @@
                         id: existingItem.id, 
                         title: existingItem.title || existingItem.text, 
                         date: dateContext || existingItem.deadline || existingItem.date, 
+                        time: existingItem.time || '',
                         linkedGoalId: existingItem.linkedGoalId || '' 
                     });
                 } else {
-                    setModalData({ id: null, title: '', date: todayStr, linkedGoalId: '' });
+                    setModalData({ id: null, title: '', date: todayStr, time: '', linkedGoalId: '' });
                 }
                 setIslandVisible(true);
             };
@@ -224,13 +221,14 @@
 
                 if (islandType === 'goal') {
                     if (modalData.id) {
-                        setAssignments(assignments.map(a => a.id === modalData.id ? { ...a, title: modalData.title, deadline: modalData.date } : a)
+                        setAssignments(assignments.map(a => a.id === modalData.id ? { ...a, title: modalData.title, deadline: modalData.date, time: modalData.time } : a)
                             .sort((a, b) => new Date(a.deadline) - new Date(b.deadline)));
                     } else {
                         setAssignments([...assignments, { 
                             id: Date.now(), 
                             title: modalData.title, 
-                            deadline: modalData.date 
+                            deadline: modalData.date,
+                            time: modalData.time
                         }].sort((a, b) => new Date(a.deadline) - new Date(b.deadline)));
                     }
                 } else {
@@ -240,7 +238,7 @@
                             Object.keys(updated).forEach(d => {
                                 updated[d] = updated[d].filter(t => t.id !== modalData.id);
                             });
-                            const newTask = { id: modalData.id, text: modalData.title, done: false, linkedGoalId: modalData.linkedGoalId ? Number(modalData.linkedGoalId) : null };
+                            const newTask = { id: modalData.id, text: modalData.title, time: modalData.time, done: false, linkedGoalId: modalData.linkedGoalId ? Number(modalData.linkedGoalId) : null };
                             updated[modalData.date] = [...(updated[modalData.date] || []), newTask];
                             return updated;
                         });
@@ -248,6 +246,7 @@
                         const newTask = { 
                             id: Date.now(), 
                             text: modalData.title, 
+                            time: modalData.time,
                             done: false, 
                             linkedGoalId: modalData.linkedGoalId ? Number(modalData.linkedGoalId) : null 
                         };
@@ -376,15 +375,27 @@
                                     className={`w-full bg-transparent border-b border-white/10 py-2 outline-none text-white text-lg placeholder:text-white/20 focus:border-white/40 transition-colors`} 
                                 />
                                 {islandType === 'goal' ? (
-                                    <div className="space-y-1 w-full">
-                                        <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Deadline Date</label>
-                                        <input type="date" value={modalData.date} onChange={e => setModalData({...modalData, date: e.target.value})} className="island-input" />
-                                    </div>
-                                ) : (
                                     <div className="grid grid-cols-2 gap-6">
                                         <div className="space-y-1">
-                                            <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Date</label>
-                                            <input type="date" value={modalData.date} onChange={e => setModalData({...modalData, date: e.target.value})} className={`island-input`} />
+                                            <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Deadline Date</label>
+                                            <input type="date" value={modalData.date} onChange={e => setModalData({...modalData, date: e.target.value})} className="island-input" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Time</label>
+                                            <input type="time" value={modalData.time} onChange={e => setModalData({...modalData, time: e.target.value})} className="island-input" />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div className="space-y-1">
+                                                <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Date</label>
+                                                <input type="date" value={modalData.date} onChange={e => setModalData({...modalData, date: e.target.value})} className={`island-input`} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Time</label>
+                                                <input type="time" value={modalData.time} onChange={e => setModalData({...modalData, time: e.target.value})} className={`island-input`} />
+                                            </div>
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Link Objective</label>
@@ -409,7 +420,7 @@
                     {/* Header */}
                     <div className="flex justify-between items-start mb-16 mt-6">
                         <div>
-                            {/* App name removed from here */}
+                            <h1 className="text-2xl font-light tracking-tight text-slate-900 dark:text-darkText">Study Flow</h1>
                             <div className="mt-2 flex items-center gap-3">
                                 <div className="w-24 h-1 bg-slate-100 dark:bg-darkBorder rounded-full overflow-hidden">
                                     <div className="h-full bg-black dark:bg-white transition-all duration-500" style={{width: `${todayCompletionRate}%`}}></div>
@@ -467,7 +478,9 @@
                                                                 <span className={`text-sm font-semibold ${isExpanded ? 'text-black dark:text-white' : 'text-slate-900 dark:text-darkText'}`}>{a.title}</span>
                                                                 <span className="text-[9px] font-black bg-slate-100 dark:bg-darkBorder text-slate-400 dark:text-darkMuted px-1.5 rounded-full">{doneCount}/{linkedTasks.length}</span>
                                                             </div>
-                                                            <span className="text-[10px] text-slate-500 dark:text-darkMuted font-bold uppercase tracking-tighter">{getDaysRemaining(a.deadline)}</span>
+                                                            <span className="text-[10px] text-slate-500 dark:text-darkMuted font-bold uppercase tracking-tighter">
+                                                                {getDaysRemaining(a.deadline)} {a.time && `• ${a.time}`}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                     <ActionMenu 
@@ -482,7 +495,7 @@
                                                             <div key={t.id} className="flex items-center justify-between group/linkitem py-1">
                                                                 <div className="flex flex-col">
                                                                     <span className={`text-xs ${t.done ? 'text-slate-300 dark:text-darkMuted line-through' : 'text-slate-600 dark:text-slate-300 font-medium'}`}>{t.text}</span>
-                                                                    <span className="text-[8px] font-bold text-slate-400 dark:text-darkMuted uppercase tracking-tight">{formatDate(t.date)}</span>
+                                                                    <span className="text-[8px] font-bold text-slate-400 dark:text-darkMuted uppercase tracking-tight">{formatDate(t.date)} {t.time && `• ${t.time}`}</span>
                                                                 </div>
                                                                 <button onClick={() => linkTaskToGoal(t.date, t.id, null)} className="opacity-0 group-hover/linkitem:opacity-100 text-[10px] font-black text-red-500 uppercase tracking-tighter">Unlink</button>
                                                             </div>
@@ -523,7 +536,7 @@
                                                                 <select className="native-trigger-overlay">
                                                                     <option disabled selected>{dateAssigns.length} Objectives</option>
                                                                     {dateAssigns.map(a => (
-                                                                        <option key={a.id}>{a.title}</option>
+                                                                        <option key={a.id}>{a.title} {a.time && `(${a.time})`}</option>
                                                                     ))}
                                                                 </select>
                                                             </div>
@@ -546,7 +559,7 @@
                                                                         <div onClick={() => toggleTask(date, t.id)} className="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-black dark:bg-white">
                                                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isDark ? "black" : "white"} strokeWidth="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                                                         </div>
-                                                                        <span className="text-sm text-slate-400 dark:text-darkMuted line-through flex-1">{t.text}</span>
+                                                                        <span className="text-sm text-slate-400 dark:text-darkMuted line-through flex-1">{t.text} {t.time && `(${t.time})`}</span>
                                                                         <ActionMenu 
                                                                             id={t.id}
                                                                             onEdit={() => handleOpenIsland('task', t, date)}
@@ -567,6 +580,7 @@
                                                                 <div onClick={() => toggleTask(date, t.id)} className={`w-6 h-6 flex-shrink-0 flex items-center justify-center border-2 border-slate-300 dark:border-darkBorder`}></div>
                                                                 <div className="flex-1 flex flex-row items-baseline gap-2 min-w-0" onClick={() => toggleTask(date, t.id)}>
                                                                     <span className="text-sm truncate text-slate-800 dark:text-darkText font-medium">{t.text}</span>
+                                                                    {t.time && <span className="text-[10px] text-slate-400 dark:text-darkMuted whitespace-nowrap">{t.time}</span>}
                                                                     {linkedGoal && <span className="flex-shrink-0 text-[8px] font-bold uppercase tracking-[0.05em] px-1.5 py-0.5 rounded border text-slate-400 border-slate-100 dark:text-darkMuted dark:border-darkBorder">{linkedGoal.title}</span>}
                                                                 </div>
                                                                 <div className="flex items-center">
