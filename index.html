@@ -139,10 +139,20 @@
 
             const [isLoading, setIsLoading] = useState(true);
             const [now] = useState(new Date());
-            const [isDark, setIsDark] = useState(() => {
-                const saved = localStorage.getItem('study_flow_theme');
-                return saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            // New Theme Logic: 'light' | 'dark' | 'system'
+            const [themeMode, setThemeMode] = useState(() => {
+                const saved = localStorage.getItem('study_flow_theme_mode');
+                return saved || 'system';
             });
+
+            const isDarkModeActive = useMemo(() => {
+                if (themeMode === 'system') {
+                    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+                }
+                return themeMode === 'dark';
+            }, [themeMode]);
+
             const [activeTab, setActiveTab] = useState('timeline');
             const [openDoneDropdowns, setOpenDoneDropdowns] = useState({});
             const [openMenuId, setOpenMenuId] = useState(null);
@@ -199,16 +209,18 @@
 
             useEffect(() => {
                 const meta = document.getElementById('theme-meta');
-                if (isDark) { 
+                localStorage.setItem('study_flow_theme_mode', themeMode);
+                
+                if (isDarkModeActive) { 
                     document.body.classList.add('dark'); 
-                    localStorage.setItem('study_flow_theme', 'dark');
+                    document.documentElement.classList.add('dark');
                     if (meta) meta.setAttribute('content', '#0a0a0a');
                 } else { 
                     document.body.classList.remove('dark'); 
-                    localStorage.setItem('study_flow_theme', 'light');
+                    document.documentElement.classList.remove('dark');
                     if (meta) meta.setAttribute('content', '#ffffff');
                 }
-            }, [isDark]);
+            }, [isDarkModeActive, themeMode]);
 
             useEffect(() => { localStorage.setItem('school_assignments', JSON.stringify(assignments)); }, [assignments]);
             useEffect(() => { localStorage.setItem('daily_tasks', JSON.stringify(dailyTasks)); }, [dailyTasks]);
@@ -390,6 +402,20 @@
                 );
             };
 
+            const ThemeToggle = () => {
+                const modes = ['light', 'dark', 'system'];
+                const currentIndex = modes.indexOf(themeMode);
+                const nextMode = modes[(currentIndex + 1) % modes.length];
+
+                return (
+                    <button onClick={() => setThemeMode(nextMode)} className="w-12 h-12 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-darkBorder hover:scale-105 transition-transform">
+                        {themeMode === 'dark' && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>}
+                        {themeMode === 'light' && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-500"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>}
+                        {themeMode === 'system' && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>}
+                    </button>
+                );
+            };
+
             return (
                 <div className="max-w-xl mx-auto px-6 pt-10 pb-32 w-full relative min-h-screen">
                     <div className={`splash-screen bg-white dark:bg-darkBg ${!isLoading ? 'slide-up' : ''}`}>
@@ -471,15 +497,9 @@
                                 <div className="flex items-center justify-between py-4 border-b border-slate-50 dark:border-darkBorder">
                                     <div>
                                         <h3 className="text-sm font-semibold dark:text-white">Interface Appearance</h3>
-                                        <p className="text-[11px] text-slate-400 dark:text-darkMuted">Currently in {isDark ? 'Dark' : 'Light'} Mode</p>
+                                        <p className="text-[11px] text-slate-400 dark:text-darkMuted">Mode: {themeMode.charAt(0).toUpperCase() + themeMode.slice(1)}</p>
                                     </div>
-                                    <button onClick={() => setIsDark(!isDark)} className="w-12 h-12 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-darkBorder hover:scale-105 transition-transform">
-                                        {isDark ? (
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-                                        ) : (
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-500"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-                                        )}
-                                    </button>
+                                    <ThemeToggle />
                                 </div>
                                 <div className="flex items-center justify-between py-4 border-b border-slate-50 dark:border-darkBorder">
                                     <div>
@@ -595,7 +615,7 @@
                                                                 {doneTasks.map(t => (
                                                                     <div key={t.id} className="flex items-center gap-4 opacity-60 group">
                                                                         <div onClick={() => toggleTask(date, t.id)} className="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-black dark:bg-white">
-                                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isDark ? "black" : "white"} strokeWidth="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isDarkModeActive ? "black" : "white"} strokeWidth="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                                                         </div>
                                                                         <span className="text-sm text-slate-400 dark:text-darkMuted line-through flex-1">{t.text}</span>
                                                                         <ActionMenu 
@@ -684,4 +704,4 @@
         ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
-</html
+</html>
