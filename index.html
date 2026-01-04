@@ -31,11 +31,11 @@
             overflow-x: hidden; 
             width: 100%; 
             position: relative;
-            background-color: #ffffff; [span_6](start_span)/*[span_6](end_span) */
+            background-color: #ffffff;
             -webkit-tap-highlight-color: transparent;
             transition: background-color 0.3s ease;
         }
-        body.dark { background-color: #0a0a0a; color: #f5f5f5; [span_7](start_span)} /*[span_7](end_span) */
+        body.dark { background-color: #0a0a0a; color: #f5f5f5; }
         
         .splash-screen {
             position: fixed;
@@ -136,7 +136,7 @@
             const [isLoading, setIsLoading] = useState(true);
             const [now] = useState(new Date());
             
-            [span_8](start_span)// Fixed theme: strictly follow system default[span_8](end_span)
+            // Set to system preference by default
             const [isDark, setIsDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
 
             const [activeTab, setActiveTab] = useState('timeline');
@@ -190,7 +190,7 @@
                 }
             };
 
-            [span_9](start_span)// Updates theme classes on body based on system preference[span_9](end_span)
+            // Enforce dark mode on body based on system setting
             useEffect(() => {
                 const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
                 const handleChange = (e) => setIsDark(e.matches);
@@ -384,7 +384,6 @@
 
             return (
                 <div className="max-w-xl mx-auto px-6 pt-10 pb-32 w-full relative min-h-screen">
-                    [span_10](start_span){/* Splash Screen - color fixed[span_10](end_span) */}
                     <div className={`splash-screen bg-white dark:bg-darkBg ${!isLoading ? 'slide-up' : ''}`}>
                         <h1 className="text-2xl font-light tracking-tight text-slate-900 dark:text-darkText">Study Flow</h1>
                     </div>
@@ -461,7 +460,6 @@
                         <section className="fade-in">
                             <h2 className="text-[10px] font-bold text-slate-500 dark:text-darkMuted uppercase tracking-[0.2em] mb-6 border-b border-slate-100 dark:border-darkBorder pb-2">Settings</h2>
                             <div className="space-y-6">
-                                [span_11](start_span){/* Theme display modified[span_11](end_span) */}
                                 <div className="flex items-center justify-between py-4 border-b border-slate-50 dark:border-darkBorder">
                                     <div>
                                         <h3 className="text-sm font-semibold dark:text-white">Dark Mode</h3>
@@ -487,7 +485,6 @@
                                         <div className={`absolute top-1 w-4 h-4 rounded-full transition-all ${hideEmptyDays ? 'left-7 bg-white dark:bg-black' : 'left-1 bg-white dark:bg-slate-400'}`}></div>
                                     </button>
                                 </div>
-                                [span_12](start_span){/* Added text at the bottom[span_12](end_span) */}
                                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-300 dark:text-darkBorder text-center pt-4">For now always set to system default</p>
                             </div>
                         </section>
@@ -680,4 +677,4 @@
         ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
-</html>
+</html
