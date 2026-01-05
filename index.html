@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Study Flow</title>
+    <script>
+        (function() {
+            const saved = localStorage.getItem('study_flow_theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (saved === 'dark' || (!saved && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -26,6 +35,7 @@
     </script>
     <style>
         input, select, textarea { font-size: 16px !important; }
+        /* Use dark: selector for CSS variables to match system/manual state */
         body { 
             touch-action: manipulation;
             overflow-x: hidden; 
@@ -35,7 +45,7 @@
             -webkit-tap-highlight-color: transparent;
             transition: background-color 0.3s ease;
         }
-        body.dark { background-color: #0a0a0a; color: #f5f5f5; }
+        .dark body { background-color: #0a0a0a; color: #f5f5f5; }
         
         .island-popup {
             transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
@@ -127,10 +137,12 @@
             };
 
             const [now] = useState(new Date());
+            
+            // Sync React state with the class we already applied in the head
             const [isDark, setIsDark] = useState(() => {
-                const saved = localStorage.getItem('study_flow_theme');
-                return saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+                return document.documentElement.classList.contains('dark');
             });
+
             const [activeTab, setActiveTab] = useState('timeline');
             const [openDoneDropdowns, setOpenDoneDropdowns] = useState({});
             const [openMenuId, setOpenMenuId] = useState(null);
@@ -146,7 +158,7 @@
             const [islandType, setIslandType] = useState('task');
             const [modalData, setModalData] = useState({ id: null, title: '', date: '', linkedGoalId: '' });
             
-            // New state for hiding empty dates
+            // State for hiding empty dates
             const [hideEmptyDates, setHideEmptyDates] = useState(() => {
                 const saved = localStorage.getItem('study_flow_hide_empty');
                 return saved === 'true';
@@ -162,17 +174,6 @@
                 return () => window.removeEventListener('click', handleGlobalClick);
             }, []);
 
-            useEffect(() => {
-                window.history.pushState({ tab: activeTab }, '');
-                const handlePopState = (event) => {
-                    if (event.state && event.state.tab) {
-                        setActiveTab(event.state.tab);
-                    }
-                };
-                window.addEventListener('popstate', handlePopState);
-                return () => window.removeEventListener('popstate', handlePopState);
-            }, []);
-
             const navigateTo = (tab) => {
                 if (tab !== activeTab) {
                     window.history.pushState({ tab }, '');
@@ -181,14 +182,17 @@
             };
 
             useEffect(() => {
-                if (isDark) { document.body.classList.add('dark'); localStorage.setItem('study_flow_theme', 'dark'); }
-                else { document.body.classList.remove('dark'); localStorage.setItem('study_flow_theme', 'light'); }
+                if (isDark) { 
+                    document.documentElement.classList.add('dark'); 
+                    localStorage.setItem('study_flow_theme', 'dark'); 
+                } else { 
+                    document.documentElement.classList.remove('dark'); 
+                    localStorage.setItem('study_flow_theme', 'light'); 
+                }
             }, [isDark]);
 
             useEffect(() => { localStorage.setItem('school_assignments', JSON.stringify(assignments)); }, [assignments]);
             useEffect(() => { localStorage.setItem('daily_tasks', JSON.stringify(dailyTasks)); }, [dailyTasks]);
-            
-            // Persist hide empty dates setting
             useEffect(() => { localStorage.setItem('study_flow_hide_empty', hideEmptyDates); }, [hideEmptyDates]);
 
             const todayStr = useMemo(() => getLocalDateString(now), [now]);
@@ -303,16 +307,16 @@
                 setDeleteLinkedTasks(false);
             };
 
+            const deleteTask = (date, taskId) => {
+                setDailyTasks({...dailyTasks, [date]: (dailyTasks[date] || []).filter(x => x.id !== taskId)});
+                setConfirmDelete(null);
+            };
+
             const toggleTask = (date, taskId) => {
                 setDailyTasks(prev => {
                     const updated = (prev[date] || []).map(x => x.id === taskId ? {...x, done: !x.done} : x);
                     return {...prev, [date]: updated};
                 });
-            };
-
-            const deleteTask = (date, taskId) => {
-                setDailyTasks({...dailyTasks, [date]: (dailyTasks[date] || []).filter(x => x.id !== taskId)});
-                setConfirmDelete(null);
             };
 
             const toggleDoneDropdown = (date) => {
@@ -336,7 +340,7 @@
                 return tasks.length === 0 ? 0 : Math.round((tasks.filter(t => t.done).length / tasks.length) * 100);
             }, [dailyTasks, todayStr]);
 
-            const ActionMenu = ({ onEdit, onDelete, id, isObjective }) => {
+            const ActionMenu = ({ onEdit, onDelete, id }) => {
                 const isOpen = openMenuId === id;
                 return (
                     <div className="relative" onClick={e => e.stopPropagation()}>
@@ -453,7 +457,6 @@
                                     </button>
                                 </div>
 
-                                {/* New Toggle Option */}
                                 <div className="flex items-center justify-between py-4 border-b border-slate-50 dark:border-darkBorder">
                                     <div>
                                         <h3 className="text-sm font-semibold dark:text-white">Streamline Timeline</h3>
@@ -528,7 +531,6 @@
                                     const allTasks = dailyTasks[date] || [];
                                     const isRealToday = date === todayStr;
 
-                                    // Filter empty dates if setting is enabled
                                     if (hideEmptyDates && !isRealToday && allTasks.length === 0 && dateAssigns.length === 0) {
                                         return null;
                                     }
